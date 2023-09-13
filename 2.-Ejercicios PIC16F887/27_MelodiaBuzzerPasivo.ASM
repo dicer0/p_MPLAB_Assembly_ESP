@@ -1,0 +1,1476 @@
+;27.- Melodía en Buzzer Pasivo.
+			INCLUDE			<C:\Users\diego\OneDrive\Documents\The_MechaBible\p_MPLAB (Ensamblador)_ESP\2.-Ejercicios PIC16F887\0.-Configuracion\Configuracion_PIC.asm>
+ 	 	 	BCF 	 		TRISB,RB4 	 	 
+ 	 	 	CLRF 	 		TRISC 		
+ 	 	 	BCF 	 		STATUS,RP0 	 	;B0.
+			CLRF			PORTC
+			CLRF			PORTB
+			CONT			EQU 0X20 
+			BEAT3			EQU 0X21 
+			CLRF			CONT
+			CLRF			BEAT3 
+INICIO
+			BTFSS			PORTB,0
+			GOTO			$-1
+			CALL			REBOTE 
+			BTFSC			PORTB,0 
+			GOTO			$-1
+			CALL			REBOTE
+			CLRF			CONT
+			BCF			STATUS,Z
+;---------------------INICIO MELODIA---------------------
+			
+;---------------------PRIMERAS 2 PARTITURAS---------------------
+UNO_DOS
+			BCF			STATUS,Z
+			BCF			STATUS,C
+			CLRF			BEAT3 
+AA1
+			CALL			SOL_SOST_2
+			INCF			BEAT3,F
+			MOVF			BEAT3,W
+			XORLW			.77
+			BTFSS			STATUS,Z
+			GOTO			AA1
+			CLRF			BEAT3 
+AA2
+			CALL			DO_SOST_3
+			INCF			BEAT3,F
+			MOVF			BEAT3,W
+			XORLW			.103
+			BTFSS			STATUS,Z
+			GOTO			AA2
+			CLRF			BEAT3 
+AA3
+			CALL			MI_3
+			INCF			BEAT3,F
+			MOVF			BEAT3,W
+			XORLW			.122
+			BTFSS			STATUS,Z
+			GOTO			AA3
+			INCF			CONT,F
+			MOVF			CONT,W 
+			XORLW				0X08
+			BTFSS			STATUS,Z
+			GOTO			UNO_DOS
+			CLRF			CONT
+			BCF				STATUS,Z
+;---------------------TERCERA PARTITURA---------------------
+TRES
+			CLRF		 BEAT3
+AA4
+			CALL		 LA_2
+			INCF		 BEAT3,F
+			MOVF		 BEAT3,W
+			XORLW		 .82
+			BTFSS		 STATUS,Z
+			GOTO		 AA4
+			CLRF		 BEAT3
+AA5
+			CALL		 DO_SOST_3
+			INCF		 BEAT3,F
+			MOVF		 BEAT3,W
+			XORLW		 .103
+			BTFSS		 STATUS,Z
+			GOTO		 AA5
+			CLRF		 BEAT3
+AA6
+			CALL 		MI_3
+			INCF 		BEAT3,F
+			MOVF		 BEAT3,W
+			XORLW 		.122
+			BTFSS		 STATUS,Z
+			GOTO 		AA6
+			INCF		 CONT,F
+			MOVF 		CONT,W
+			XORLW 		0X02
+			BTFSS 		STATUS,Z
+			GOTO 		TRES
+			CLRF 		BEAT3
+AA7
+			CALL 		LA_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW		 .82
+			BTFSS 		STATUS,Z
+			GOTO 		AA7
+			CLRF		 BEAT3
+AA8
+			CALL 		RE_E_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.109
+			BTFSS 		STATUS,Z
+			GOTO 		AA8
+			CLRF 		BEAT3
+AA9
+			CALL		 FA_SOST_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.137
+			BTFSS 		STATUS,Z
+			GOTO 		AA9
+			CLRF 		BEAT3
+AB1
+			CALL 		LA_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW		 .82
+			BTFSS		STATUS,Z
+			GOTO		 AB1
+			CLRF		 BEAT3
+AB2
+			CALL		 RE_SOST_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.115
+			BTFSS		 STATUS,Z
+			GOTO 		AB2
+			CLRF		 BEAT3
+AB3
+			CALL		 FA_SOST_3
+			INCF		 BEAT3,F
+			MOVF		 BEAT3,W
+			XORLW		 .137
+			BTFSS		 STATUS,Z
+			GOTO		 AB3
+;---------------------CUARTA PARTITURA---------------------
+CUATRO
+			CLRF		 BEAT3
+AB4
+			CALL 		SOL_SOST_2
+			INCF		 BEAT3,F
+			MOVF		 BEAT3,W
+			XORLW		 .77
+			BTFSS		 STATUS,Z
+			GOTO 		AB4
+			CLRF 		BEAT3
+AB5
+			CALL		 SI_BEM_2
+			INCF		 BEAT3,F
+			MOVF		 BEAT3,W
+			XORLW 		.86
+			BTFSS 		STATUS,Z
+			GOTO 		AB5
+			CLRF		 BEAT3
+AB6
+			CALL 		FA_SOST_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW		 .137
+			BTFSS		STATUS,Z
+			GOTO		 AB6
+			CLRF		 BEAT3
+AB7
+			CALL 		SOL_SOST_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW		 .77
+			BTFSS		STATUS,Z
+			GOTO 		AB7
+			CLRF 		BEAT3
+AB8
+			CALL 		DO_SOST_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.103
+			BTFSS 		STATUS,Z
+			GOTO 		AB8
+			CLRF 		BEAT3
+AB9
+			CALL 		MI_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.122
+			BTFSS 		STATUS,Z
+			GOTO 		AB9
+			CLRF 		BEAT3
+AC1
+			CALL 		SOL_SOST_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.77
+			BTFSS 		STATUS,Z
+			GOTO 		AC1
+			CLRF 		BEAT3
+AC2
+			CALL 		DO_SOST_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.103
+			BTFSS 		STATUS,Z
+			GOTO 		AC2
+			CLRF 		BEAT3
+AC3
+			CALL 		RE_SOST_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.115
+			BTFSS 		STATUS,Z
+			GOTO 		AC3
+			CLRF 		BEAT3
+AC4
+			CALL 		FA_SOST_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.69
+			BTFSS 		STATUS,Z
+			GOTO 		AC4
+			CLRF 		BEAT3
+AC5
+			CALL 		SI_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.91
+			BTFSS 		STATUS,Z
+			GOTO 		AC5
+			CLRF 		BEAT3
+AC6
+			CALL 		RE_SOST_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.115
+			BTFSS 		STATUS,Z
+			GOTO 		AC6
+			CLRF 		CONT
+			BCF 		STATUS,Z
+;---------------------QUINTA PARTITURA---------------------
+QUINTO
+			CLRF 		BEAT3
+AC7
+			CALL 		MI_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.61
+			BTFSS 		STATUS,Z
+			GOTO 		AC7
+			CLRF 		BEAT3
+AC8
+			CALL 		SOL_SOST_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.77
+			BTFSS 		STATUS,Z
+			GOTO 		AC8
+			CLRF 		BEAT3
+AC9
+			CALL 		DO_SOST_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.103
+			BTFSS 		STATUS,Z
+			GOTO 		AC9
+CINCOSOLDOMI
+			CLRF 		BEAT3
+AD1
+			CALL 		SOL_SOST_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.77
+			BTFSS 		STATUS,Z
+			GOTO 		AD1
+			CLRF 		BEAT3
+AD2
+			CALL 		DO_SOST_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.103
+			BTFSS 		STATUS,Z
+			GOTO 		AD2
+			CLRF 		BEAT3
+AD3
+			CALL 		MI_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.122
+			BTFSS 		STATUS,Z
+			GOTO 		AD3
+			INCF 		CONT,F
+			MOVF 		CONT,W
+			XORLW 		0X03
+			BTFSS 		STATUS,Z
+			GOTO 		CINCOSOLDOMI
+			CLRF 		CONT
+			BCF 		STATUS,Z
+;---------------------SEXTA PARTITURA---------------------
+SEXTA
+			CLRF 		BEAT3
+AD4
+			CALL 		SOL_SOST_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.77
+			BTFSS 		STATUS,Z
+			GOTO 		AD4
+			CLRF 		BEAT3
+AD5
+			CALL 		RE_SOST_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.115
+			BTFSS 		STATUS,Z
+			GOTO 		AD5
+			CLRF 		BEAT3
+AD6
+			CALL 		FA_SOST_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.137
+			BTFSS 		STATUS,Z
+			GOTO 		AD6
+			INCF 		CONT,F
+			MOVF 		CONT,W
+			XORLW 		0X04
+			BTFSS 		STATUS,Z
+			GOTO 		SEXTA
+			CLRF 		CONT
+			BCF 		STATUS,Z
+; ---------------------SEPTIMA PARTITURA---------------------
+SEPTIMA
+			CLRF 		BEAT3
+AD7
+			CALL 		SOL_SOST_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.77
+			BTFSS 		STATUS,Z
+			GOTO 		AD7
+			CLRF 		BEAT3
+AD8
+			CALL 		DO_SOST_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.103
+			BTFSS 		STATUS,Z
+			GOTO 		AD8
+			CLRF 		BEAT3
+AD9
+			CALL 		MI_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.122
+			BTFSS 		STATUS,Z
+			GOTO 		AD9
+			INCF 		CONT,F
+			MOVF 		CONT,W
+			XORLW 		0X02
+			BTFSS 		STATUS,Z
+			GOTO 		SEPTIMA
+			CLRF 		CONT
+			BCF 		STATUS,Z
+SEPTIMALADOFA
+			CLRF 		BEAT3
+AE1
+			CALL 		LA_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.82
+			BTFSS 		STATUS,Z
+			GOTO 		AE1
+			CLRF 		BEAT3
+AE2
+			CALL 		DO_SOST_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.103
+			BTFSS 		STATUS,Z
+			GOTO 		AE2
+			CLRF 		BEAT3
+AE3
+			CALL 		FA_SOST_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.137
+			BTFSS 		STATUS,Z
+			GOTO 		AE3
+			INCF 		CONT,F
+			MOVF 		CONT,W
+			XORLW 		0X02
+			BTFSS 		STATUS,Z
+			GOTO 		SEPTIMALADOFA
+			CLRF 		CONT
+			BCF 		STATUS,Z
+;---------------------OCTAVA PARTITURA---------------------
+OCTAVA
+			CLRF 		BEAT3
+AE4
+			CALL 		SOL_SOST_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.77
+			BTFSS 		STATUS,Z
+			GOTO 		AE4
+			CLRF 		BEAT3
+AE5
+			CALL 		SI_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.91
+			BTFSS 		STATUS,Z
+			GOTO 		AE5
+			CLRF 		BEAT3
+AE6
+			CALL 		MI_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.122
+			BTFSS 		STATUS,Z
+			GOTO 		AE6
+			INCF 		CONT,F
+			MOVF 		CONT,W
+			XORLW 		0X02
+			BTFSS 		STATUS,Z
+			GOTO 		OCTAVA
+			CLRF 		CONT
+			BCF 		STATUS,Z
+OCTAVALASIRE
+			CLRF 		BEAT3
+AE7
+			CALL 		LA_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW		.82
+			BTFSS 		STATUS,Z
+			GOTO 		AE7
+			CLRF 		BEAT3
+AE8
+			CALL 		SI_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.91
+			BTFSS 		STATUS,Z
+			GOTO 		AE8
+			CLRF 		BEAT3
+AE9
+			CALL 		RE_SOST_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.115
+			BTFSS 		STATUS,Z
+			GOTO 		AE9
+			INCF 		CONT,F
+			MOVF 		CONT,W
+			XORLW 		0X02
+			BTFSS 		STATUS,Z
+			GOTO 		OCTAVALASIRE
+			CLRF 		CONT
+			BCF 		STATUS,Z
+;---------------------NOVENA PARTITURA---------------------
+NOVENA
+			CLRF 		BEAT3
+AF1
+			CALL 		SOL_SOST_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.77
+			BTFSS 		STATUS,Z
+			GOTO 		AF1
+			CLRF 		BEAT3
+AF2
+			CALL 		SI_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.91
+			BTFSS 		STATUS,Z
+			GOTO 		AF2
+			CLRF 		BEAT3
+AF3
+			CALL 		MI_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.122
+			BTFSS 		STATUS,Z
+			GOTO 		AF3
+			INCF 		CONT,F
+			MOVF 		CONT,W
+			XORLW 		0X04
+			BTFSS 		STATUS,Z
+			GOTO 		NOVENA
+			CLRF 		CONT
+			BCF 		STATUS,Z
+DECIMA
+			CLRF 		BEAT3
+AF4
+			CALL 		SOL_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.73
+			BTFSS 		STATUS,Z
+			GOTO 		AF4
+			CLRF 		BEAT3
+AF5
+			CALL 		SI_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.91
+			BTFSS 		STATUS,Z
+			GOTO 		AF5
+			CLRF 		BEAT3
+AF6
+			CALL 		MI_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.122
+			BTFSS 		STATUS,Z
+			GOTO 		AF6
+;---------------------DECIMA PARTITURA---------------------
+DECIMASOLSIMI
+			CLRF 		BEAT3
+AF7
+			CALL 		SOL_SOST_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.77
+			BTFSS 		STATUS,Z
+			GOTO 		AF7
+			CLRF 		BEAT3
+AF8
+			CALL 		SI_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.91
+			BTFSS 		STATUS,Z
+			GOTO 		AF8
+			CLRF 		BEAT3
+AF9
+			CALL 		MI_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.122
+			BTFSS 		STATUS,Z
+			GOTO 		AF9
+			INCF 		CONT,F
+			MOVF 		CONT,W
+			XORLW 		0X03
+			BTFSS 		STATUS,Z
+			GOTO 		DECIMASOLSIMI
+			CLRF 		CONT
+			BCF 		STATUS,Z
+;---------------------ONCEAVA PARTITURA---------------------
+DECIMA1
+			CLRF 		BEAT3
+AG1
+			CALL 		SOL_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.73
+			BTFSS 		STATUS,Z
+			GOTO 		AG1
+			CLRF 		BEAT3
+AG2
+			CALL 		SI_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.91
+			BTFSS 		STATUS,Z
+			GOTO 		AG2
+			CLRF 		BEAT3
+AG3 
+			CALL 		FA_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.129
+			BTFSS 		STATUS,Z
+			GOTO 		AG3
+DECIMA1SOLSIFA
+			CLRF 		BEAT3
+AG4
+			CALL 		SOL_SOST_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.77
+			BTFSS 		STATUS,Z
+			GOTO 		AG4
+			CLRF 		BEAT3
+AG5
+			CALL 		SI_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.91
+			BTFSS 		STATUS,Z
+			GOTO 		AG5
+			CLRF 		BEAT3
+AG6
+			CALL 		FA_SOST_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.137
+			BTFSS 		STATUS,Z
+			GOTO 		AG6
+			INCF 		CONT,F
+			MOVF 		CONT,W
+			XORLW 		0X03
+			BTFSS 		STATUS,Z
+			GOTO 		DECIMA1SOLSIFA
+			CLRF 		CONT
+			BCF 		STATUS,Z
+;---------------------DOCEAVA PARTITURA---------------------
+DECIMA2
+			CLRF 		BEAT3
+AG7
+			CALL 		SOL_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.73
+			BTFSS 		STATUS,Z
+			GOTO 		AG7
+			CLRF 		BEAT3
+AG8
+			CALL 		DO_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.97
+			BTFSS 		STATUS,Z
+			GOTO 		AG8
+			CLRF 		BEAT3
+AG9
+			CALL 		MI_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.122
+			BTFSS 		STATUS,Z
+			GOTO 		AG9
+			CLRF 		BEAT3
+AH1
+			CALL 		SOL_SOST_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.77
+			BTFSS 		STATUS,Z
+			GOTO 		AH1
+			CLRF 		BEAT3
+AH2
+			CALL 		SI_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.91
+			BTFSS 		STATUS,Z
+			GOTO 		AH2
+			CLRF 		BEAT3
+AH3
+			CALL 		MI_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.122
+			BTFSS 		STATUS,Z
+			GOTO 		AH3
+			CLRF 		BEAT3
+AH4
+			CALL 		SOL_SOST_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.77
+			BTFSS 		STATUS,Z
+			GOTO 		AH4
+			CLRF 		BEAT3
+AH5
+			CALL 		DO_SOST_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.103
+			BTFSS 		STATUS,Z
+			GOTO 		AH5
+			CLRF 		BEAT3
+AH6
+			CALL 		MI_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.122
+			BTFSS 		STATUS,Z
+			GOTO 		AH6
+			CLRF 		BEAT3
+AH7
+			CALL 		FA_SOST_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.69
+			BTFSS 		STATUS,Z
+			GOTO 		AH7
+			CLRF 		BEAT3
+AH8
+			CALL 		DO_SOST_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.103
+			BTFSS 		STATUS,Z
+			GOTO 		AH8
+			CLRF 		BEAT3
+AH9
+			CALL 		MI_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.122
+			BTFSS 		STATUS,Z
+			GOTO 		AH9
+; ;---------------------TRECEAVA PARTITURA---------------------
+DECIMA3
+			CLRF 		BEAT3
+AI1
+			CALL 		FA_SOST_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.69
+			BTFSS 		STATUS,Z
+			GOTO 		AI1
+			CLRF 		BEAT3
+AI2
+			CALL 		SI_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.91
+			BTFSS 		STATUS,Z
+			GOTO 		AI2
+			CLRF 		BEAT3
+AI3
+			CALL 		RE_E_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.109
+			BTFSS 		STATUS,Z
+			GOTO 		AI3
+			CLRF 		BEAT3
+AI4
+			CALL 		FA_SOST_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.69
+			BTFSS 		STATUS,Z
+			GOTO 		AI4
+			CLRF 		BEAT3
+AI5
+			CALL 		SI_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.91
+			BTFSS 		STATUS,Z
+			GOTO 		AI5
+			CLRF 		BEAT3
+AI6
+			CALL 		RE_SOST_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.115
+			BTFSS 		STATUS,Z
+			GOTO 		AI6
+			CLRF 		BEAT3
+AI7
+			CALL 		SOL_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.73
+			BTFSS 		STATUS,Z
+			GOTO 		AI7
+			CLRF 		BEAT3
+AI8
+			CALL 		SI_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.91
+			BTFSS 		STATUS,Z
+			GOTO 		AI8
+			CLRF 		BEAT3
+AI9
+			CALL 		DO_SOST_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.103
+			BTFSS 		STATUS,Z
+			GOTO 		AI9
+			CLRF 		BEAT3
+AJ1
+			CALL 		MI_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.61
+			BTFSS 		STATUS,Z
+			GOTO 		AJ1
+			CLRF 		BEAT3
+AJ2
+			CALL 		SI_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.91
+			BTFSS 		STATUS,Z
+			GOTO 		AJ2
+			CLRF 		BEAT3
+AJ3
+			CALL 		DO_SOST_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.103
+			BTFSS 		STATUS,Z
+			GOTO 		AJ3
+; CATORCEAVA PARTITURA
+DECIMA4
+			CLRF 		BEAT3
+AJ4
+			CALL 		FA_SOST_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.69
+			BTFSS 		STATUS,Z
+			GOTO 		AJ4
+			CLRF 		BEAT3
+AJ5
+			CALL 		SI_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.91
+			BTFSS 		STATUS,Z
+			GOTO 		AJ5
+			CLRF 		BEAT3
+AJ6
+			CALL 		RE_E_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.109
+			BTFSS 		STATUS,Z
+			GOTO 		AJ6
+			CLRF 		BEAT3
+AJ7
+			CALL 		FA_SOST_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.69
+			BTFSS 		STATUS,Z
+			GOTO 		AJ7
+			CLRF 		BEAT3
+AJ8
+			CALL 		SI_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.91
+			BTFSS 		STATUS,Z
+			GOTO 		AJ8
+			CLRF 		BEAT3
+AJ9
+			CALL 		RE_SOST_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.115
+			BTFSS 		STATUS,Z
+			GOTO 		AJ9
+			CLRF 		BEAT3
+AK1
+			CALL 		FA_SOST_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.69
+			BTFSS 		STATUS,Z
+			GOTO 		AK1
+			CLRF 		BEAT3
+AK2
+			CALL 		LA_SOST_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.86
+			BTFSS 		STATUS,Z
+			GOTO 		AK2
+			CLRF 		BEAT3
+AK3
+			CALL 		DO_SOST_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.103
+			BTFSS 		STATUS,Z
+			GOTO 		AK3
+			CLRF 		BEAT3
+AK4
+			CALL 		FA_SOST_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.69
+			BTFSS 		STATUS,Z
+			GOTO 		AK4
+			CLRF 		BEAT3
+AK5
+			CALL 		LA_2
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.82
+			BTFSS 		STATUS,Z
+			GOTO 		AK5
+			CLRF 		BEAT3
+AK6
+			CALL 		DO_SOST_3
+			INCF 		BEAT3,F
+			MOVF 		BEAT3,W
+			XORLW 		.103
+			BTFSS 		STATUS,Z
+			GOTO 		AK6			
+
+			GOTO		INICIO
+						 	
+;---------------------REBOTE---------------------
+REBOTE
+			MOVLW		.245
+			MOVWF		0X61
+			MOVLW		.14
+			MOVWF		0X62 
+			CALL		ST2V 
+			RETURN
+; ----------------------------------------------
+;A UNA FRECUENCIA DE 54BPM SE REPITE 51 VECES
+DO_SOST_2
+			BSF			PORTC,2
+			MOVLW		.5
+			MOVWF		0X61
+			MOVLW		.102
+			MOVWF		0X62 
+			CALL		ST2V
+			NOP 
+			NOP 
+			NOP
+			NOP	
+			NOP	
+			NOP	
+			NOP	
+			NOP	
+			NOP	
+			NOP	
+			BCF			PORTC,2
+			MOVLW 		.5
+			MOVWF 		0X61
+			MOVLW 		.102
+			MOVWF 		0X62
+			CALL 		ST2V
+			NOP
+			NOP
+			NOP
+			RETURN
+;----A UNA FRECUENCIA DE 54BPM SE REPITE 58 VECES-----
+RE_SOST_2
+			BSF 		PORTC,2
+			MOVLW 		.26
+			MOVWF 		0X61
+			MOVLW 		.17
+			MOVWF 		0X62
+			CALL 		ST2V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			BCF 		PORTC,2
+			MOVLW 		.26
+			MOVWF 		0X61
+			MOVLW 		.17
+			MOVWF 		0X62
+			CALL 		ST2V
+			NOP
+			RETURN
+;----A UNA FRECUENCIA DE 54BPM SE REPITE 61 VECES-----
+MI_2
+			BSF 		PORTC,2
+			MOVLW 		.7
+			MOVWF 		0X61
+			MOVLW 		.61
+			MOVWF 		0X62
+			CALL 		ST2V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			BCF 		PORTC,2
+			MOVLW 		.7
+			MOVWF 		0X61
+			MOVLW 		.61
+			MOVWF 		0X62
+			CALL 		ST2V
+			NOP
+			RETURN
+;----A UNA FRECUENCIA DE 54BPM SE REPITE 69 VECES-----
+FA_SOST_2
+			BSF 		PORTC,2
+			MOVLW 		.17
+			MOVWF 		0X61
+			MOVLW 		.22
+			MOVWF 		0X62
+			CALL 		ST2V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			BCF 		PORTC,2
+			MOVLW 		.17
+			MOVWF 		0X61
+			MOVLW 		.22
+			MOVWF 		0X62
+			CALL 		ST2V
+			NOP
+			RETURN
+;----A UNA FRECUENCIA DE 54BPM SE REPITE 73 VECES-----
+SOL_2
+			BSF 		PORTC,2
+			MOVLW 		.4
+			MOVWF 		0X61
+			MOVLW 		.90
+			MOVWF 		0X62
+			CALL 		ST2V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			BCF 		PORTC,2
+			MOVLW 		.4
+			MOVWF 		0X61
+			MOVLW 		.90
+			MOVWF 		0X62
+			CALL 		ST2V
+			RETURN
+;----A UNA FRECUENCIA DE 54BPM SE REPITE 77 VECES-----
+SOL_SOST_2
+			BSF 		PORTC,2
+			MOVLW 		.52
+			MOVWF 		0X61
+			MOVLW 		.6
+			MOVWF 		0X62
+			CALL 		ST2V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			BCF 		PORTC,2
+			MOVLW 		.52
+			MOVWF 		0X61
+			MOVLW 		.6
+			MOVWF 		0X62
+			CALL 		ST2V
+			RETURN
+;----A UNA FRECUENCIA DE 54BPM SE REPITE 82 VECES-----
+LA_2
+			BSF 		PORTC,2
+			MOVLW 		.4
+			MOVWF 		0X61
+			MOVLW 		.80
+			MOVWF 		0X62
+			CALL 		ST2V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			BCF 		PORTC,2
+			MOVLW 		.4
+			MOVWF 		0X61
+			MOVLW 		.80
+			MOVWF 		0X62
+			CALL 		ST2V
+			NOP
+			RETURN
+;----A UNA FRECUENCIA DE 54BPM SE REPITE 86 VECES-----
+LA_SOST_2
+			BSF 		PORTC,2
+			MOVLW 		.85
+			MOVWF 		0X61
+			MOVLW 		.3
+			MOVWF 		0X62
+			CALL 		ST2V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			BCF 		PORTC,2
+			MOVLW 		.85
+			MOVWF 		0X61
+			MOVLW 		.3
+			MOVWF 		0X62
+			CALL 		ST2V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			RETURN
+
+;----A UNA FRECUENCIA DE 54BPM SE REPITE 91 VECES-----
+SI_2
+			BSF 		PORTC,2
+			MOVLW 		.3
+			MOVWF 		0X61
+			MOVLW 		.95
+			MOVWF 		0X62
+			CALL 		ST2V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			BCF 		PORTC,2
+			MOVLW 		.3
+			MOVWF 		0X61
+			MOVLW 		.95
+			MOVWF 		0X62
+			CALL 		ST2V
+			NOP
+			NOP
+			RETURN
+
+;----A UNA FRECUENCIA DE 54BPM SE REPITE 86 VECES-----
+SI_BEM_2
+			BSF 		PORTC,2
+			MOVLW 		.85
+			MOVWF 		0X61
+			MOVLW 		.3
+			MOVWF 		0X62
+			CALL 		ST2V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			BCF 		PORTC,2
+			MOVLW 		.85
+			MOVWF 		0X61
+			MOVLW 		.3
+			MOVWF 		0X62
+			CALL 		ST2V
+			NOP
+			NOP
+			NOP
+			NOP
+			RETURN
+
+;----A UNA FRECUENCIA DE 54BPM SE REPITE 97 VECES-----
+DO_3
+			BSF 		PORTC,2
+			MOVLW 		.12
+			MOVWF 		0X61
+			MOVLW 		.22
+			MOVWF 		0X62
+			CALL 		ST2V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			BCF 		PORTC,2
+			MOVLW 		.12
+			MOVWF 		0X61
+			MOVLW 		.22
+			MOVWF 		0X62
+			CALL 		ST2V
+			RETURN
+
+;----A UNA FRECUENCIA DE 54BPM SE REPITE 103 VECES-----
+DO_SOST_3
+			BSF 		PORTC,2
+			MOVLW 		.6
+			MOVWF 		0X61
+			MOVLW 		.42
+			MOVWF 		0X62
+			CALL 		ST2V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			BCF 		PORTC,2
+			MOVLW 		.6
+			MOVWF 		0X61
+			MOVLW 		.42
+			MOVWF 		0X62
+			CALL 		ST2V
+			NOP
+			RETURN
+
+;----A UNA FRECUENCIA DE 54BPM SE REPITE 109 VECES-----
+RE_E_3
+			BSF 		PORTC,2
+			MOVLW 		.241
+			MOVWF 		0X60
+			CALL 		ST1V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			BCF 		PORTC,2
+			MOVLW 		.241
+			MOVWF 		0X60
+			CALL 		ST1V
+			NOP
+			NOP
+			RETURN
+
+;----A UNA FRECUENCIA DE 54BPM SE REPITE 115 VECES-----
+RE_SOST_3
+			BSF 		PORTC,2
+			MOVLW 		.227
+			MOVWF 		0X60
+			CALL 		ST1V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			BCF 		PORTC,2
+			MOVLW 		.227
+			MOVWF 		0X60
+			CALL 		ST1V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			RETURN
+;----A UNA FRECUENCIA DE 54BPM SE REPITE 122 VECES-----
+MI_3
+			BSF 		PORTC,2
+			MOVLW 		.215
+			MOVWF 		0X60
+			CALL 		ST1V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			BCF 		PORTC,2
+			MOVLW 		.215
+			MOVWF 		0X60
+			CALL 		ST1V
+			RETURN
+
+;----A UNA FRECUENCIA DE 65BPM SE REPITE 129 VECES-----
+FA_3
+			BSF 		PORTC,2
+			MOVLW 		.202
+			MOVWF 		0X60
+			CALL 		ST1V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			BCF 		PORTC,2
+			MOVLW 		.202
+			MOVWF 		0X60
+			CALL 		ST1V
+			NOP
+			NOP
+			NOP
+			NOP
+			RETURN
+
+;----A UNA FRECUENCIA DE 54BPM SE REPITE 137 VECES-----
+FA_SOST_3
+			BSF 		PORTC,2
+			MOVLW 		.191
+			MOVWF 		0X60
+			CALL 		ST1V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			BCF 		PORTC,2
+			MOVLW 		.191
+			MOVWF 		0X60
+			CALL 		ST1V
+			NOP
+			RETURN
+
+;----A UNA FRECUENCIA DE 54BPM SE REPITE 145 VECES-----
+SOL_3
+			BSF 		PORTC,2
+			MOVLW 		.180
+			MOVWF 		0X60
+			CALL 		ST1V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			BCF 		PORTC,2
+			MOVLW 		.180
+			MOVWF 		0X60
+			CALL 		ST1V
+			NOP
+			NOP
+			RETURN
+
+;----A UNA FRECUENCIA DE 54BPM SE REPITE 154 VECES-----
+SOL_SOST_3
+			BSF 		PORTC,2
+			MOVLW 		.170
+			MOVWF 		0X60
+			CALL 		ST1V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			BCF 		PORTC,2
+			MOVLW 		.170
+			MOVWF 		0X60
+			CALL 		ST1V
+			RETURN
+
+;----A UNA FRECUENCIA DE 54BPM SE REPITE 163 VECES-----
+LA_3
+			BSF 		PORTC,2
+			MOVLW 		.160
+			MOVWF 		0X60
+			CALL 		ST1V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			BCF 		PORTC,2
+			MOVLW 		.160
+			MOVWF 		0X60
+			CALL 		ST1V
+			NOP
+			NOP
+			NOP
+			RETURN
+
+;----A UNA FRECUENCIA DE 54BPM SE REPITE 173 VECES-----
+LA_SOST_3
+			BSF 		PORTC,2
+			MOVLW 		.151
+			MOVWF 		0X60
+			CALL 		ST1V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			BCF 		PORTC,2
+			MOVLW 		.151
+			MOVWF 		0X60
+			CALL 		ST1V
+			NOP
+			NOP
+			RETURN
+
+;----A UNA FRECUENCIA DE 54BPM SE REPITE 183 VECES-----
+SI_3
+			BSF 		PORTC,2
+			MOVLW 		.142
+			MOVWF 		0X60
+			CALL 		ST1V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			BCF 		PORTC,2
+			MOVLW 		.142
+			MOVWF 		0X60
+			CALL 		ST1V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			RETURN
+
+;----A UNA FRECUENCIA DE 54BPM SE REPITE 205 VECES-----
+DO_SOST_4
+			BSF 		PORTC,2
+			MOVLW 		.127
+			MOVWF 		0X60
+			CALL 		ST1V
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			NOP
+			BCF 		PORTC,2
+			MOVLW 		.127
+			MOVWF 		0X60
+			CALL 		ST1V
+			RETURN
+
+			INCLUDE		<C:\Users\diego\OneDrive\Documents\The_MechaBible\p_MPLAB (Ensamblador)_ESP\2.-Ejercicios PIC16F887\0.-Configuracion\SubRutinaTiempo.asm>
+			END

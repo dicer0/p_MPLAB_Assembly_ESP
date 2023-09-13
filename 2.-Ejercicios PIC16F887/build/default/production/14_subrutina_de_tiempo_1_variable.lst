@@ -1,0 +1,1169 @@
+MPASM 5.87  14_SUBRUTINA_DE_TIEMPO_1_VARIABL   1-7-2021  16:03:46         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00001 ;14.- Realiza una subrutina de tiempo de 1 variable que cree un retardo de 
+                      00002 ;10 milisegundos.
+                      00003             
+                      00004 ;La configuración del PIC será jalada por una instrucción INCLUDE, para poder 
+                      00005 ;hacerlo debo poner la dirección de la carpeta que llega hasta donde se 
+                      00006 ;encuentra el archivo dentro de este proyecto de MPLABX en mi computadora, con 
+                      00007 ;todo y el nombre del archivo que es Configuracion_PIC.asm de la siguiente 
+                      00008 ;manera:
+                      00009             INCLUDE     <C:\Users\diego\Documents\Aprendiendo MPLAB (Ensamblador)\EjerciciosPIC16F887.X\
+                            Configuracion_PIC.asm>
+                      00001 ;La directiva PROCESSOR debe ser la primera que venga en el programa y sirve 
+                      00002 ;para indicar qué dispositivo estoy programando.
+                      00003             PROCESSOR   16F887
+                      00004 
+                      00005 ;Se deben declarar 2 palabras de configuración de 14 bits para setear el PIC 
+                      00006 ;usando los registros 2007 y 2008 hexadecimales (que no pertenecen a la RAM).
+2007   2BE4           00007             __CONFIG    0X2007, 0X2BE4
+                      00008 ;La primera palabra de configuración que se guarda en el registro 0X2007 y sus 
+                      00009 ;bits significan:
+                      00010 ;1:    Apaga el modo DEBUG que revisa el código línea por línea y habilita el 
+                      00011 ;Puerto B como entradas y salidas digitales o analógicas (bit 13).
+                      00012 ;0:    Apaga el Modo de Baja Tensión y habilita el Puerto B como entradas y 
+                      00013 ;salidas digitales o analógicas (bit 12).
+                      00014 ;1:    Activa el modo Reloj a Prueba de Fallas que monitorea si el oscilador 
+                      00015 ;funciona bien (bit 11).
+                      00016 ;0:    Desactiva el divisor de reloj, dejando la frecuencia default del 
+                      00017 ;oscilador interno en el PIC que es de 4MHz (bit 10).
+                      00018 ;11:   Activa el Brown-Out todo el tiempo, que reiniciará al PIC si el valor de 
+                      00019 ;voltaje en el oscilador baja de cierto rango (bits 9 y 8).
+                      00020 ;1:    Apaga el modo de protección de escritura en la memoria RAM (bit 7).
+                      00021 ;1:    Apaga el modo de protección de escritura en la memoria FLASH (bit 6).
+                      00022 ;1:    Hace que el pin RE3 del puerto E funcione como reset, reiniciando el PIC 
+                      00023 ;cuando le ingrese un 1 lógico de una señal digital (bit 5).
+                      00024 ;0:    Enciende el Power-up Timer, hace que el PIC tarde 75 milisegundos en 
+                      00025 ;encenderse para proteger al microcontrolador de las variaciones que vienen de 
+                      00026 ;la fuente de alimentación (bit 4).
+                      00027 ;0:    Apaga el Watchdog (bit 3).
+                      00028 ;100:  Elige el oscilador tipo INTOSCIO, que usa el oscilador interno incluido 
+                      00029 ;en el PIC de 4 MHz y configura los pines RA6 y RA7 para que ambos sean 
+                      00030 ;entradas/salidas analógicas o digitales (bits 2, 1 y 0).
+                      00031 ;Por lo tanto la palabra de configuración es 10 1011 1110 0100 = 2BE4
+2008   3FFF           00032             __CONFIG    0X2008, 0X3FFF
+                      00033 ;La segunda palabra de configuración que se guarda en el registro 0X2008 y sus 
+                      00034 ;bits significan:
+                      00035 ;111:        Siempre estarán de esta manera, no se les debe cambiar (bits 13, 
+                      00036 ;12 y 11).
+                      00037 ;11:         Apaga el modo de protección de escritura en la memoria FLASH (bits 
+                      00038 ;10 y 9). 
+                      00039 ;1:          Hace que el Brown-Out reinicie el PIC cuando la señal de reloj baje 
+                      00040 ;de 4V (bit 8), esta configuración está relacionada con la de la palabra de 
+                      00041 ;configuración anterior.
+                      00042 ;1111 1111:  Siempre estarán de esta manera, no se les debe cambiar (bits 7, 6, 
+                      00043 ;5, 4, 3, 2, 1 y 0).
+MPASM 5.87  14_SUBRUTINA_DE_TIEMPO_1_VARIABL   1-7-2021  16:03:46         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00044 ;Por lo tanto la palabra de configuración es 11 1111 1111 1111 = 3FFF
+                      00045             
+                      00046 ;La directiva INCLUDE sirve para abrir un archivo de texto plano, copiar todo 
+                      00047 ;su contenido y pegarlo en el programa, en este caso se usa para añadir el 
+                      00048 ;archivo P16F887.INC que incluye las 35 instrucciones del PIC16F887 a mi 
+                      00049 ;programa junto con sus directivas EQU para que las pueda usar.
+                      00050             INCLUDE     <P16F887.INC>
+                      00001         LIST
+                      00002 
+                      00003 ;==========================================================================
+                      00004 ; Build date : Jan 06 2020
+                      00005 ;  MPASM PIC16F887 processor include
+                      00006 ; 
+                      00007 ;  (c) Copyright 1999-2020 Microchip Technology, All rights reserved
+                      00008 ;==========================================================================
+                      00009 
+                      00810         LIST
+                      00051             
+                      00052 ;La directiva ORG (u origen) le indica al programa desde qué dirección de la
+                      00053 ;memoria FLASH debe empezar a guardar todas las instrucciones del código y para 
+                      00054 ;ello debe recibir una dirección de 13 bits.
+                      00055             ORG         0X0000
+                      00056             
+                      00057 ;A PARTIR DE AHORA USAREMOS LAS 35 INSTRUCCIONES DEL PIC
+                      00058 ;La directiva EQU asocia nombres a los registros de uso específico y además con 
+                      00059 ;ella puedo darle a algún registro de propósito general un nombre en específico,
+                      00060 ;se usa mucho cuando se utilizan las 35 instrucciones del PIC.
+                      00061 
+                      00062 ;Siempre al inicializar el PIC nos encontramos en el banco 0 de la RAM porque 
+                      00063 ;los bits RP0 y RP1 del registro STATUS se inicializan con valor 0, se cambia de 
+                      00064 ;banco poniendo en este órden RP1 y RP0 porque el bit RP1 es el bit 8 del 
+                      00065 ;registro STATUS (osea el bit de su posición 7) y RP0 es el bit 7 del registro 
+                      00066 ;STATUS (posición 6), eso hace que se vea en el órden correcto como se ve abajo, 
+                      00067 ;el banco en el que nos encontramos cuando en la ventana de SFRs que permite 
+                      00068 ;ver el estado de los registros de propósito específico, vea el estado del 
+                      00069 ;registro STATUS.
+                      00070             ;Banco 0: RP1 = 0, RP0 = 0
+                      00071             ;Banco 1: RP1 = 0, RP0 = 1
+                      00072             ;Banco 2: RP1 = 1, RP0 = 0
+                      00073             ;Banco 3: RP1 = 1, RP0 = 1
+                      00074 
+                      00075 ;Ahora vamos a primero limpiar los pines de todos los puertos, ya que todos se 
+                      00076 ;encuentran en el banco 0 y después de un reset en el datasheet estos se 
+                      00077 ;muestran como x, esto implica que no sabemos con qué valor (1 o 0) se 
+                      00078 ;iniciarán, por lo que manualmente debemos poner sus bits como 0 (limpiarlos).
+                      00079             ;CLRF   F   (Z): Llena de ceros la dirección F del registro RAM 
+                      00080             ;indicado, como en este caso se usa un registro de propósito 
+                      00081             ;específico (los puertos) en vez de poner un número hexadecimal 
+                      00082             ;para indicar el registro F, pondré su directiva EQU (osea su 
+                      00083             ;nombre). Esta instrucción siempre pone la bandera Z = 1.
+0000   0185           00084             CLRF        PORTA ;Hace 0 (limpia) todos los pines del puerto A
+0001   0186           00085             CLRF        PORTB ;Hace 0 (limpia) todos los pines del puerto B
+0002   0187           00086             CLRF        PORTC ;Hace 0 (limpia) todos los pines del puerto C
+MPASM 5.87  14_SUBRUTINA_DE_TIEMPO_1_VARIABL   1-7-2021  16:03:46         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0003   0188           00087             CLRF        PORTD ;Hace 0 (limpia) todos los pines del puerto D
+0004   0189           00088             CLRF        PORTE ;Hace 0 (limpia) todos los pines del puerto E
+                      00089             
+                      00090 ;Ahora debo indicar si mis pines serán entradas o salidas y si serán digitales 
+                      00091 ;o analógicos, para ello primero debo indicar si son digitales o analógicos y 
+                      00092 ;después indicar si son entradas o salidas, sino el PIC no hace caso.
+                      00093 
+                      00094 ;PUERTOS DIGITALES O ANALÓGICOS
+                      00095 ;Los únicos puertos del PIC16F887 que pueden ser entradas/salidas analógicas o 
+                      00096 ;digitales son los puertos A, B y E (los demás siempre son digitales), para 
+                      00097 ;indicar si los pines de los puertos A y E son digitales o analógicos debo 
+                      00098 ;cambiar los bits del registro ANSEL individualmente y para indicar si los pines 
+                      00099 ;del puerto B son digitales o analógicos debo cambiar los bits del registro 
+                      00100 ;ANSELH (los registros ANSEL y ANSELH se inicializan con todos sus bits en 1, 
+                      00101 ;osea como pines analógicos), donde:
+                      00102             ;Bit del registro ANSEL o ANSELH: 1 = Analógico
+                      00103             ;Bit del registro ANSEL o ANSELH: 0 = Digital
+                      00104 ;Para poder hacer esto me debo trasladar al banco 3, que es donde se encuentran 
+                      00105 ;los registros ANSEL y ANSELH, cambiando los bits RP0 y RP1 del registro STATUS.
+                      00106             ;BSF   F, B: Pone un 1 en el bit B de la dirección F del registro 
+                      00107             ;RAM.
+                      00108             ;BCF   F, B: Pone un 0 en el bit B de la dirección F del registro 
+                      00109             ;RAM.
+                      00110             ;La posición del bit B en el registro F se puede indicar contando 
+                      00111             ;desde cero en decimal, osea poniendo 0, 1, 2, 3, 4, 5, 6 o 7.
+                      00112             ;Pero como en este caso se usa un registro de propósito específico 
+                      00113             ;(el registro STATUS) en vez de poner un número hexadecimal para 
+                      00114             ;indicar el registro F, pondré su directiva EQU (osea el nombre del 
+                      00115             ;registro) y también en vez de poner un número decimal como B para 
+                      00116             ;indicar el bit que quiero afectar, pondré su directiva EQU (osea el 
+                      00117             ;nombre del bit).
+0005   1703           00118             BSF         STATUS, RP1 ;RP1 = 1
+0006   1683           00119             BSF         STATUS, RP0 ;RP0 = 1
+                      00120             ;Con esto ya estoy en el banco 3
+                      00121             
+                      00122             ;CLRF   F   (Z): Llena de ceros la dirección F del registro RAM 
+                      00123             ;indicado. Siempre levanta la bandera ceros, Z = 1.
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0007   0188           00124             CLRF        ANSEL   ;Hace todos los pines de los puertos A y E digitales.
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0008   0189           00125             CLRF        ANSELH  ;Hace todos los pines del puerto B digitales.
+                      00126 
+                      00127 ;PUERTOS COMO ENTRADAS O SALIDAS
+                      00128 ;Ahora debo indicar si los puertos son entradas o salidas, para hacer esto debo 
+                      00129 ;modificar los registros TRISA, TRISB, TRISC, TRISD y TRISE; la mayoría se 
+                      00130 ;encuentran en el banco 1, por lo que debo cambiar el estado de los bits RP0 y 
+                      00131 ;RP1 del registro STATUS
+0009   1303           00132             BCF         STATUS, RP1 ;RP1 = 0
+000A   1683           00133             BSF         STATUS, RP0 ;RP0 = 1
+                      00134             ;Con esto ya estoy en el banco 1
+                      00135 ;------------Esta configuración se repetirá en todos los ejercicios-------------
+                      00136 
+                      00137 ;La configuración del PIC será jalada por una instrucción INCLUDE, para poder 
+MPASM 5.87  14_SUBRUTINA_DE_TIEMPO_1_VARIABL   1-7-2021  16:03:46         PAGE  4
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00138 ;hacerlo debo poner la dirección de la carpeta que llega hasta donde se 
+                      00139 ;encuentra el archivo dentro de este proyecto de MPLABX en mi computadora, con 
+                      00140 ;todo y el nombre del archivo que es Configuracion_PIC.asm de la siguiente 
+                      00141 ;manera:
+                      00142             ;INCLUDE    <C:\Users\diego\Documents\Aprendiendo MPLAB (Ensamblador)\EjerciciosPIC16F887.X\
+                            Configuracion_PIC.asm>
+                      00143 ;Lo que hace la configuración es indicar el PIC que estoy usando, declarar las 
+                      00144 ;2 palabras de configuración, usar otra directiva INCLUDE para jalar el archivo 
+                      00145 ;P16F887.INC que incluye las 35 instrucciones del PIC junto con las directivas 
+                      00146 ;EQU (los nombres) de sus registros, la directiva ORG que indica la dirección de 
+                      00147 ;la memoria FLASH desde donde se empezará a guardar el código, el limpiado 
+                      00148 ;(poner en 0) de todos los bits de los puertos (A, B, C, D y E) y hacer que los 
+                      00149 ;puertos A, B y E (que son los únicos que pueden ser analógicos o digitales) 
+                      00150 ;sean todos entradas o salidas digitales.
+                      00010 ;Lo que hace la configuración es indicar el PIC que estoy usando, declarar las 
+                      00011 ;2 palabras de configuración, usar otra directiva INCLUDE para jalar el archivo 
+                      00012 ;P16F887.INC que incluye las 35 instrucciones del PIC junto con las directivas 
+                      00013 ;EQU (los nombres) de sus registros, la directiva ORG que indica la dirección de 
+                      00014 ;la memoria FLASH desde donde se empezará a guardar el código, el limpiado 
+                      00015 ;(poner en 0) de todos los bits de los puertos (A, B, C, D y E) y hacer que los 
+                      00016 ;puertos A, B y E (que son los únicos que pueden ser analógicos o digitales) 
+                      00017 ;sean todos entradas o salidas digitales.
+                      00018             
+                      00019 ;Ahora si ya puedo resolver el ejercicio:
+                      00020 ;14.- Realiza una subrutina de tiempo de 1 variable que cree un retardo de 
+                      00021 ;10 milisegundos.
+                      00022 
+                      00023 ;ME DEBO IR AL BANCO 0 PARA PODER ACCEDER A SUS REGISTROS DE PROPÓSITO GENERAL 
+                      00024 ;Y AHÍ PODER GUARDAR EL VALOR DE LAS VARIABLES DE MIS SUBRUTINAS DE TIEMPO
+000B   1303           00025 INICIO:     BCF         STATUS, RP1 ;RP1 = 0
+000C   1283           00026             BCF         STATUS, RP0 ;RP0 = 0
+                      00027             ;Con esto ya estoy en el banco 0
+                      00028             ;Banco 0: RP1 = 0, RP0 = 0
+                      00029             ;Banco 1: RP1 = 0, RP0 = 1
+                      00030             ;Banco 2: RP1 = 1, RP0 = 0
+                      00031             ;Banco 3: RP1 = 1, RP0 = 1
+                      00032             
+                      00033 ;TODAS LAS SUBRUTINAS LAS DEBO DECLARAR HASTA LA PARTE DE ABAJO EN MI PROGRAMA.
+                      00034 ;Una subrutina es como una función en cualquier otro lenguaje de programación, 
+                      00035 ;ya que sirve para escribir código que se reutilizará varias veces dentro de un
+                      00036 ;mismo programa, se le debe asignar un nombre (directiva EQU) a la subrutina 
+                      00037 ;y cuando la quiera usar simplemente debo usar la instrucción CALL y el nombre 
+                      00038 ;de la subrutina. Las subrutinas afectan el estado de la Pila y solo se pueden 
+                      00039 ;anidar 6 subrutinas dentro de una misma (osea una subrutina de 7 niveles), sino 
+                      00040 ;la Pila se desbordará de sus 8 niveles y el programa fallará catastróficamente.
+                      00041             
+                      00042 ;PARA SIMULAR EL COMPORTAMIENTO DE LAS SUBRUTINAS DEBO USAR LA HERRAMIENTA 
+                      00043 ;STOPWATCH DE MPLABX Y SUS BREAKPOINTS, YA SEA PARA VER EL ESTADO DE LOS NIVELES 
+                      00044 ;EN LA PILA QUE ALCANZA CADA SUBRUTINA PONIENDO UN BREAKPOINT JUSTO EN LA 
+                      00045 ;INSTRUCCIÓN RETURN DE CADA UNA O PARA MEDIR EL TIEMPO DE CADA SUBRUTINA DE 
+                      00046 ;TIEMPO VIENDO LA VENTANA DEL STOPWATCH.
+                      00047             
+                      00048 ;LAS SUBRUTINAS DE TIEMPO SE USAN PARA DEJAR PASAR CIERTO TIEMPO DESPUÉS DE QUE 
+MPASM 5.87  14_SUBRUTINA_DE_TIEMPO_1_VARIABL   1-7-2021  16:03:46         PAGE  5
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00049 ;SE EJECUTE UNA LÍNEA DE CÓDIGO, A ESTO SE LE LLAMA MANEJO DE TIEMPOS Y ES MUY
+                      00050 ;IMPORTANTE EN LAS TAREAS DEL PIC. DEPENDIENDO DEL TIEMPO DE RETARDO QUE QUIERA
+                      00051 ;ALCANZAR USARÉ SUBRUTINAS DE TIEMPO DE 1, 2 O 3 VARIABLES.
+                      00052             
+                      00053 ;SUBRUTINA DE TIEMPO DE 1 VARIABLE: Abarca un tiempo de retardo de 11 us 
+                      00054 ;(microsegundos) a 1,541 us = 1.541 ms (milisegundos).
+                      00055     ;Las variables de mi subrutina se pueden colocar en los registros de 
+                      00056     ;propósito general que quiera, pero para tener un órden, las variables 1, 2 
+                      00057     ;o 3 de las subrutinas de tiempo las guardaré en los registros de propósito 
+                      00058     ;general que vayan de la dirección 0X60 a la 0X68 del banco 0 de la memoria 
+                      00059     ;RAM en el PIC y las declararé en forma decimal de la siguiente manera:
+                      00060         ;.numero_decimal
+                      00061     ;Usa el siguiente registro de propósito general para guardar la variable:
+                      00062         ;Registro 0X60 para guardar la variable 1.
+                      00063             ;MOVLW  K: Coloca directamente en el acumulador W un número binario 
+                      00064             ;cualquiera de 8 bits dado por el valor literal K. Como en este caso 
+                      00065             ;lo usaré para colocar una variable de mi subrutina de tiempo, se 
+                      00066             ;declara en forma decimal, poniendo .número_decimal.
+000D   3019           00067             MOVLW       .25 ;W = var1 = .25 = 25 decimal
+                      00068             ;MOVWF   F: Lee el contenido del acumulador W y lo coloca en un 
+                      00069             ;registro de la RAM indicado por la dirección F. En este el 
+                      00070             ;contenido del acumulador W se coloca en un registro de propósito 
+                      00071             ;general F que sirve para guardar un valor en la memoria RAM (que se 
+                      00072             ;borrará cuando se reinicie el PIC), indicado en forma hexadecimal, 
+                      00073             ;poniendo 0Xnúmero_hexadecimal.
+000E   00E0           00074             MOVWF       0X60 ;0X60 = W = var1 = 25 decimal
+                      00075             ;CALL   k: Sirve para llamar una subrutina por su nombre y ejecutar 
+                      00076             ;una acción que se pueda repetir varias dentro del mismo código, de 
+                      00077             ;esta manera esa acción no la debo escribir varias veces.
+000F   2???           00078             CALL        ST1V ;Llama la Subrutina de Tiempo de 1 Variable (ST1V).
+                      00079             
+                      00080             
+                      00081             ;GOTO   k: Sirve para hacer que el programa brinque a otra parte del 
+                      00082             ;código, indicado por una directiva EQU que tenga el nombre de la 
+                      00083             ;parte del código a donde quiero que brinque el programa.
+0010   2???           00084             GOTO        INICIO
+                      00085             ;Todos los códigos en ensamblador deben tener al menos una 
+                      00086             ;instrucción GOTO cuya función sea ocasionar que el PIC repita su 
+                      00087             ;función indefinidamente.
+                      00088 
+                      00089 
+                      00090 ;-----------HASTA ABAJO DEL PROGRAMA SE DECLARAN TODAS LAS SUBRUTINAS-----------
+                      00091 ;PARA CREAR UNA SUBRUTINA DE TIEMPO LO QUE SE HACE ES CREAR UN CONTADOR QUE 
+                      00092 ;CUENTE EL TIEMPO DE RETARDO DESEADO, DADO POR EL VALOR #cm EN LAS 3 ECUACIONES 
+                      00093 ;DE LAS SUBRUTINAS DE TIEMPO DE 1, 2 O 3 VARIABLES, DEPENDIENDO DEL TIEMPO QUE 
+                      00094 ;SE QUIERA ALCANZAR SE USARÁ UNA SUBRUTINA EN ESPECÍFCO, YA QUE MIENTRAS MAYOR 
+                      00095 ;SEA EL TIEMPO DE RETARDO, MAYOR DEBERÁ SER EL NÚMERO DE VARIABLES EN LA 
+                      00096 ;SUBRUTINA.
+                      00097 ;EN LAS ECUACIONES DE LAS SUBRUTINAS DE TIEMPO DE 1, 2 Y 3 VARIABLES SE 
+                      00098 ;CONSIDERA QUE EN LOS MICROCONTROLADORES UN CICLO DE MÁQUINA (cm) EQUIVALE A 
+                      00099 ;4 CICLOS DEL OSCILADOR Y SI ESTAMOS UTILIZANDO EL OSCILADOR INTERNO DEL 
+                      00100 ;PIC16F887 SIN UTILIZAR EL DIVISOR DE RELOJ, LA FRECUENCIA DEL RELOJ ES DE 4MHZ, 
+                      00101 ;POR LO QUE:
+MPASM 5.87  14_SUBRUTINA_DE_TIEMPO_1_VARIABL   1-7-2021  16:03:46         PAGE  6
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00102     ;1 cm = 4*(1/4X10^6) = 1 microsegundo = 1 us
+                      00103 ;*******************************************************************************
+                      00104 ;SUBRUTINA DE TIEMPO DE 1 VARIABLE: Puede abarcar tiempos de retardo de 
+                      00105 ;11 us (microsegundos) a 1.541 ms (milisegundos) ya que var1 en su ecuación 
+                      00106 ;solo puede adoptar valores de 1 a 256.
+                      00107 ;SE USA EL REGISTRO DE PROPÓSITO GENERAL 0X60.
+                      00108     ;Ecuación: En la ecuación, #cm es el tiempo de retardo que quiero obtener y 
+                      00109     ;lo debo introducir en microsegundos (us).
+                      00110         ;#cm = 5 + (var1)(#NOPS + 3)
+                      00111     ;----------------Bucle con var1 guardada en el registro 0X60----------------
+                      00112             ;NOP: Esta instrucción no hace nada, solamente sirve para dejar 
+                      00113             ;pasar 1 ciclo de máquina (cm). Se puede declarar un número 
+                      00114             ;cualquiera de NOPS pero en el curso dentro de las subrutinas de 
+                      00115             ;tiempo siempre usaremos #NOPS = 3 para que sea un dato conocido.
+0011   0000           00116 ST1V:       NOP
+0012   0000           00117             NOP
+0013   0000           00118             NOP ;#NOPS = 3
+                      00119     ;AHORA VAMOS A USAR UNA DE LAS 35 OPERACIONES QUE ME PERMITEN REALIZAR 
+                      00120     ;UN BUCLE PARECIDO AL CICLO FOR Y SE USA PARA CREAR UN CONTADOR.
+                      00121     ;DECFSZ     F, D: Esta operación decrementa (le resta 1) a lo que haya en 
+                      00122     ;la dirección F del registro de RAM indicado y el resultado lo guarda en 
+                      00123     ;el acumulador W o en el mismo registro F, además dependiendo de si el 
+                      00124     ;resultado del decremento es cero o no, se brincará la siguiente instrucción 
+                      00125     ;o la ejecutará normalmente:
+                      00126         ;Si el resultado del decremento NO es cero:
+                      00127             ;Sigue la ejecución normal del código.
+                      00128             ;Dura 1 ciclo de máquina su ejecución.
+                      00129             
+                      00130         ;Si el resultado del decremento es cero (0X00):
+                      00131             ;SE BRINCA LA SIGUIENTE INSTRUCCIÓN QUE HAYA EN EL CÓDIGO (aumenta 
+                      00132             ;en 1 al contador de programa o PC).
+                      00133             ;Dura 2 ciclos de máquina su ejecución.
+                      00134             ;HACE QUE EL PROGRAMA SALGA DE LA SUBRUTINA DE TIEMPO DE 1 VARIABLE.
+0014   0BE0           00135             DECFSZ              0X60,F
+                      00136             ;GOTO   k: Sirve para hacer que el programa brinque a otra parte del 
+                      00137             ;código, indicado por una directiva EQU que tenga el nombre de la 
+                      00138             ;parte del código a donde quiero que brinque el programa.
+0015   2???           00139             GOTO                ST1V
+                      00140             ;RETURN: Todas las subrutinas siempre deben terminar con la 
+                      00141             ;instrucción return, lo que hace RETURN es bajar un nivel a la pila 
+                      00142             ;y cargar en el PC el valor que esté guardado ahí, haciendo que el 
+                      00143             ;programa brinque a la parte del código después de la instrucción 
+                      00144             ;CALL que llamó esta subrutina, siguiendo así la ejecución normal 
+                      00145             ;que llevaba el programa.
+                      00146     ;----------------Bucle con var1 guardada en el registro 0X60----------------
+0016   0008           00147             RETURN
+                      00148 ;*******************************************************************************
+                      00149 ;SUBRUTINA DE TIEMPO DE 2 VARIABLES: Puede abarcar tiempos de retardo de 
+                      00150 ;17 us (microsegundos) a 394.247 ms (milisegundos) ya que var1 y var2 en su 
+                      00151 ;ecuación solo puede adoptar valores de 1 a 256.
+                      00152 ;LA SUBRUTINA DE TIEMPO DE 2 VARIABLES SE CREA ANIDANDO LA DE 1 VARIABLE DENTRO
+                      00153 ;DE OTRA Y SE USAN LOS REGISTROS DE PROPÓSITO GENERAL 0X61, 0X62 y 0X63.
+                      00154     ;Ecuación: En la ecuación, #cm es el tiempo de retardo que quiero obtener y 
+MPASM 5.87  14_SUBRUTINA_DE_TIEMPO_1_VARIABL   1-7-2021  16:03:46         PAGE  7
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00155     ;lo debo introducir en microsegundos (us).
+                      00156         ;#cm = 7 + var2 * (4 + (nops+3) * var1)
+                      00157     ;----------------Bucle con var2 guardada en el registro 0X61----------------
+                      00158             ;MOVF   F, D: Lee el contenido de un registro de la RAM indicado 
+                      00159             ;por la dirección F y lo coloca en el mismo registro F o en el 
+                      00160             ;acumulador W, dependiendo de la directiva EQU que ponga en donde 
+                      00161             ;dice D.
+0017   0862           00162 ST2V:       MOVF                0X62,W ;W = 0X62 = var1
+                      00163             ;MOVWF   F: Lee el contenido del acumulador W y lo coloca en un 
+                      00164             ;registro de la RAM indicado por la dirección F. En este caso el 
+                      00165             ;contenido del acumulador W se coloca en un registro de propósito 
+                      00166             ;general F que sirve para guardar un valor en la memoria RAM (que se 
+                      00167             ;borrará cuando se reinicie el PIC), indicado en forma hexadecimal, 
+                      00168             ;poniendo 0Xnúmero_hexadecimal para la subrutina de tiempo.
+0018   00E3           00169             MOVWF               0X63 ;Guarda una copia de la variable 1
+                      00170             ;NOP: Esta instrucción no hace nada, solamente sirve para dejar 
+                      00171             ;pasar 1 ciclo de máquina (cm). Se puede declarar un número 
+                      00172             ;cualquiera de NOPS pero en el curso dentro de las subrutinas de 
+                      00173             ;tiempo siempre usaremos #NOPS = 3 para que sea un dato conocido.
+                      00174         ;--------Bucle con la copia de var1 guardada en el registro 0X63--------
+0019   0000           00175 ST2V_V1:    NOP
+001A   0000           00176             NOP             
+001B   0000           00177             NOP ;#NOPS = 3
+                      00178     ;AHORA VAMOS A USAR UNA DE LAS 35 OPERACIONES QUE ME PERMITEN REALIZAR 
+                      00179     ;UN BUCLE PARECIDO AL CICLO FOR Y SE USA PARA CREAR UN CONTADOR.
+                      00180     ;DECFSZ     F, D: Esta operación decrementa (le resta 1) a lo que haya en 
+                      00181     ;la dirección F del registro de RAM indicado y el resultado lo guarda en 
+                      00182     ;el acumulador W o en el mismo registro F, además dependiendo de si el 
+                      00183     ;resultado del decremento es cero o no, se brincará la siguiente instrucción 
+                      00184     ;o la ejecutará normalmente:
+                      00185         ;Si el resultado del decremento NO es cero:
+                      00186             ;Sigue la ejecución normal del código.
+                      00187             
+                      00188         ;Si el resultado del decremento es cero (0X00):
+                      00189             ;SE BRINCA LA SIGUIENTE INSTRUCCIÓN QUE HAYA EN EL CÓDIGO (aumenta 
+                      00190             ;en 1 al contador de programa o PC).
+                      00191             ;HACE QUE EL PROGRAMA SALGA DE LA SUBRUTINA DE TIEMPO DE 1 VARIABLE.
+001C   0BE3           00192             DECFSZ              0X63,F ;Haz un bucle con la copia de var1
+                      00193             ;GOTO   k: Sirve para hacer que el programa brinque a otra parte del 
+                      00194             ;código, indicado por una directiva EQU que tenga el nombre de la 
+                      00195             ;parte del código a donde quiero que brinque el programa.
+001D   2???           00196             GOTO                ST2V_V1
+                      00197         ;--------Bucle con la copia de var1 guardada en el registro 0X63--------
+                      00198     ;DECFSZ     F, D: Esta operación decrementa (le resta 1) a lo que haya en 
+                      00199     ;la dirección F del registro de RAM indicado y el resultado lo guarda en 
+                      00200     ;el acumulador W o en el mismo registro F, además dependiendo de si el 
+                      00201     ;resultado del decremento es cero o no, se brincará la siguiente instrucción 
+                      00202     ;o la ejecutará normalmente:
+                      00203         ;Si el resultado del decremento NO es cero:
+                      00204             ;Sigue la ejecución normal del código.
+                      00205             
+                      00206         ;Si el resultado del decremento es cero (0X00):
+                      00207             ;SE BRINCA LA SIGUIENTE INSTRUCCIÓN QUE HAYA EN EL CÓDIGO (aumenta 
+MPASM 5.87  14_SUBRUTINA_DE_TIEMPO_1_VARIABL   1-7-2021  16:03:46         PAGE  8
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00208             ;en 1 al contador de programa o PC).
+                      00209             ;HACE QUE EL PROGRAMA SALGA DE LA SUBRUTINA DE TIEMPO DE 2 VARIABLES.
+001E   0BE1           00210             DECFSZ              0X61,F ;Haz un bucle con var2
+                      00211             ;GOTO   k: Sirve para hacer que el programa brinque a otra parte del 
+                      00212             ;código, indicado por una directiva EQU que tenga el nombre de la 
+                      00213             ;parte del código a donde quiero que brinque el programa.
+001F   2???           00214             GOTO                ST2V
+                      00215             ;RETURN: Todas las subrutinas siempre deben terminar con la 
+                      00216             ;instrucción return, lo que hace RETURN es bajar un nivel a la pila 
+                      00217             ;y cargar en el PC el valor que esté guardado ahí, haciendo que el 
+                      00218             ;programa brinque a la parte del código después de la instrucción 
+                      00219             ;CALL que llamó esta subrutina, siguiendo así la ejecución normal 
+                      00220             ;que llevaba el programa.
+                      00221     ;----------------Bucle con var2 guardada en el registro 0X61----------------
+0020   0008           00222             RETURN
+                      00223 ;*******************************************************************************
+                      00224 ;SUBRUTINA DE TIEMPO DE 3 VARIABLES: Puede abarcar tiempos de retardo de 
+                      00225 ;23 us (microsegundos) a 100.926 s (segundos) = 1.6821 min (minutos) ya que 
+                      00226 ;var1,var2 y var3 pueden adoptar valores de 1 a 256 en su ecuación.
+                      00227 ;LA SUBRUTINA DE TIEMPO DE 3 VARIABLES SE CREA ANIDANDO LA DE 2 VARIABLES y DE 1 
+                      00228 ;VARIABLE DENTRO DE OTRA Y SE USAN LOS REGISTROS DE PROPÓSITO GENERAL 0X64, 0X65
+                      00229 ;0X66, 0X67 y 0X68.
+                      00230     ;Ecuación: En la ecuación, #cm es el tiempo de retardo que quiero obtener y 
+                      00231     ;lo debo introducir en microsegundos (us).
+                      00232         ;#cm = 9 + var1 * (var3 * (var2 * (nops+3) + 4) + 4)
+                      00233     ;----------------Bucle con var3 guardada en el registro 0X64----------------
+                      00234             ;MOVF   F, D: Lee el contenido de un registro de la RAM indicado 
+                      00235             ;por la dirección F y lo coloca en el mismo registro F o en el 
+                      00236             ;acumulador W, dependiendo de la directiva EQU que ponga en donde 
+                      00237             ;dice D.
+0021   0866           00238 ST3V:       MOVF                0X66,W ;W = 0X66 = var1
+                      00239             ;MOVWF   F: Lee el contenido del acumulador W y lo coloca en un 
+                      00240             ;registro de la RAM indicado por la dirección F. En este caso el 
+                      00241             ;contenido del acumulador W se coloca en un registro de propósito 
+                      00242             ;general F que sirve para guardar un valor en la memoria RAM (que se 
+                      00243             ;borrará cuando se reinicie el PIC), indicado en forma hexadecimal, 
+                      00244             ;poniendo 0Xnúmero_hexadecimal para la subrutina de tiempo.
+0022   00E7           00245             MOVWF               0X67 ;0X67 = W = var1, copia de la variable 1
+                      00246             ;NOP: Esta instrucción no hace nada, solamente sirve para dejar 
+                      00247             ;pasar 1 ciclo de máquina (cm). Se puede declarar un número 
+                      00248             ;cualquiera de NOPS pero en el curso dentro de las subrutinas de 
+                      00249             ;tiempo siempre usaremos #NOPS = 3 para que sea un dato conocido.
+                      00250         ;--------Bucle con la copia de var1 guardada en el registro 0X67--------
+                      00251             ;MOVF   F, D: Lee el contenido de un registro de la RAM indicado 
+                      00252             ;por la dirección F y lo coloca en el mismo registro F o en el 
+                      00253             ;acumulador W, dependiendo de la directiva EQU que ponga en donde 
+                      00254             ;dice D.
+0023   0865           00255 ST3V_V1:    MOVF                0X65,W ;W = 0X65 = var2
+                      00256             ;MOVWF   F: Lee el contenido del acumulador W y lo coloca en un 
+                      00257             ;registro de la RAM indicado por la dirección F. En este caso el 
+                      00258             ;contenido del acumulador W se coloca en un registro de propósito 
+                      00259             ;general F que sirve para guardar un valor en la memoria RAM (que se 
+                      00260             ;borrará cuando se reinicie el PIC), indicado en forma hexadecimal, 
+MPASM 5.87  14_SUBRUTINA_DE_TIEMPO_1_VARIABL   1-7-2021  16:03:46         PAGE  9
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00261             ;poniendo 0Xnúmero_hexadecimal para la subrutina de tiempo.
+0024   00E8           00262             MOVWF               0X68 ;0X68 = W = var2, copia de la variable 2
+                      00263             ;NOP: Esta instrucción no hace nada, solamente sirve para dejar 
+                      00264             ;pasar 1 ciclo de máquina (cm). Se puede declarar un número 
+                      00265             ;cualquiera de NOPS pero en el curso dentro de las subrutinas de 
+                      00266             ;tiempo siempre usaremos #NOPS = 3 para que sea un dato conocido.
+0025   0000           00267 ST3V_V2:    NOP
+0026   0000           00268             NOP             
+0027   0000           00269             NOP ;#NOPS = 3
+                      00270     ;AHORA VAMOS A USAR UNA DE LAS 35 OPERACIONES QUE ME PERMITEN REALIZAR 
+                      00271     ;UN BUCLE PARECIDO AL CICLO FOR Y SE USA PARA CREAR UN CONTADOR.
+                      00272     ;DECFSZ     F, D: Esta operación decrementa (le resta 1) a lo que haya en 
+                      00273     ;la dirección F del registro de RAM indicado y el resultado lo guarda en 
+                      00274     ;el acumulador W o en el mismo registro F, además dependiendo de si el 
+                      00275     ;resultado del decremento es cero o no, se brincará la siguiente instrucción 
+                      00276     ;o la ejecutará normalmente:
+                      00277         ;Si el resultado del decremento NO es cero:
+                      00278             ;Sigue la ejecución normal del código.
+                      00279             
+                      00280         ;Si el resultado del decremento es cero (0X00):
+                      00281             ;SE BRINCA LA SIGUIENTE INSTRUCCIÓN QUE HAYA EN EL CÓDIGO (aumenta 
+                      00282             ;en 1 al contador de programa o PC).
+                      00283             ;HACE QUE EL PROGRAMA SALGA DE LA SUBRUTINA DE TIEMPO DE 1 VARIABLE.
+0028   0BE8           00284             DECFSZ              0X68,F ;Haz un bucle con la copia de var2
+                      00285             ;GOTO   k: Sirve para hacer que el programa brinque a otra parte del 
+                      00286             ;código, indicado por una directiva EQU que tenga el nombre de la 
+                      00287             ;parte del código a donde quiero que brinque el programa.
+0029   2???           00288             GOTO                ST3V_V2
+                      00289 
+                      00290     ;DECFSZ     F, D: Esta operación decrementa (le resta 1) a lo que haya en 
+                      00291     ;la dirección F del registro de RAM indicado y el resultado lo guarda en 
+                      00292     ;el acumulador W o en el mismo registro F, además dependiendo de si el 
+                      00293     ;resultado del decremento es cero o no, se brincará la siguiente instrucción 
+                      00294     ;o la ejecutará normalmente:
+                      00295         ;Si el resultado del decremento NO es cero:
+                      00296             ;Sigue la ejecución normal del código.
+                      00297             
+                      00298         ;Si el resultado del decremento es cero (0X00):
+                      00299             ;SE BRINCA LA SIGUIENTE INSTRUCCIÓN QUE HAYA EN EL CÓDIGO (aumenta 
+                      00300             ;en 1 al contador de programa o PC).
+                      00301             ;HACE QUE EL PROGRAMA SALGA DE LA SUBRUTINA DE TIEMPO DE 2 VARIABLES.
+002A   0BE7           00302             DECFSZ              0X67,F ;Haz un bucle con la copia de var1
+                      00303             ;GOTO   k: Sirve para hacer que el programa brinque a otra parte del 
+                      00304             ;código, indicado por una directiva EQU que tenga el nombre de la 
+                      00305             ;parte del código a donde quiero que brinque el programa.
+002B   2???           00306             GOTO                ST3V_V1
+                      00307             ;RETURN: Todas las subrutinas siempre deben terminar con la 
+                      00308             ;instrucción return, lo que hace RETURN es bajar un nivel a la pila 
+                      00309             ;y cargar en el PC el valor que esté guardado ahí, haciendo que el 
+                      00310             ;programa brinque a la parte del código después de la instrucción 
+                      00311             ;CALL que llamó esta subrutina, siguiendo así la ejecución normal 
+                      00312             ;que llevaba el programa.
+                      00313 
+MPASM 5.87  14_SUBRUTINA_DE_TIEMPO_1_VARIABL   1-7-2021  16:03:46         PAGE 10
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00314     ;DECFSZ     F, D: Esta operación decrementa (le resta 1) a lo que haya en 
+                      00315     ;la dirección F del registro de RAM indicado y el resultado lo guarda en 
+                      00316     ;el acumulador W o en el mismo registro F, además dependiendo de si el 
+                      00317     ;resultado del decremento es cero o no, se brincará la siguiente instrucción 
+                      00318     ;o la ejecutará normalmente:
+                      00319         ;Si el resultado del decremento NO es cero:
+                      00320             ;Sigue la ejecución normal del código.
+                      00321         ;--------Bucle con la copia de var1 guardada en el registro 0X67--------
+                      00322         ;Si el resultado del decremento es cero (0X00):
+                      00323             ;SE BRINCA LA SIGUIENTE INSTRUCCIÓN QUE HAYA EN EL CÓDIGO (aumenta 
+                      00324             ;en 1 al contador de programa o PC).
+                      00325             ;HACE QUE EL PROGRAMA SALGA DE LA SUBRUTINA DE TIEMPO DE 2 VARIABLES.
+002C   0BE4           00326             DECFSZ              0X64,F ;Haz un bucle con var3
+                      00327             ;GOTO   k: Sirve para hacer que el programa brinque a otra parte del 
+                      00328             ;código, indicado por una directiva EQU que tenga el nombre de la 
+                      00329             ;parte del código a donde quiero que brinque el programa.
+002D   2???           00330             GOTO                ST3V
+                      00331             ;RETURN: Todas las subrutinas siempre deben terminar con la 
+                      00332             ;instrucción return, lo que hace RETURN es bajar un nivel a la pila 
+                      00333             ;y cargar en el PC el valor que esté guardado ahí, haciendo que el 
+                      00334             ;programa brinque a la parte del código después de la instrucción 
+                      00335             ;CALL que llamó esta subrutina, siguiendo así la ejecución normal 
+                      00336             ;que llevaba el programa.
+                      00337     ;----------------Bucle con var3 guardada en el registro 0X64----------------
+002E   0008           00338             RETURN
+                      00339 ;*******************************************************************************
+                      00340             
+                      00341             ;Los programas en ensamblador deben acabar con la directiva END.
+2BE4 3FFF             00342             END
+MPASM 5.87  14_SUBRUTINA_DE_TIEMPO_1_VARIABL   1-7-2021  16:03:46         PAGE 11
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+ABDEN                             00000000
+ABDOVF                            00000007
+ACKDT                             00000005
+ACKEN                             00000004
+ACKSTAT                           00000006
+ADCON0                            0000001F
+ADCON1                            0000009F
+ADCS0                             00000006
+ADCS1                             00000007
+ADDEN                             00000003
+ADFM                              00000007
+ADIE                              00000006
+ADIF                              00000006
+ADON                              00000000
+ADRESH                            0000001E
+ADRESL                            0000009E
+ANS0                              00000000
+ANS1                              00000001
+ANS10                             00000002
+ANS11                             00000003
+ANS12                             00000004
+ANS13                             00000005
+ANS2                              00000002
+ANS3                              00000003
+ANS4                              00000004
+ANS5                              00000005
+ANS6                              00000006
+ANS7                              00000007
+ANS8                              00000000
+ANS9                              00000001
+ANSEL                             00000188
+ANSELH                            00000189
+BAUDCTL                           00000187
+BCLIE                             00000003
+BCLIF                             00000003
+BF                                00000000
+BRG0                              00000000
+BRG1                              00000001
+BRG10                             00000002
+BRG11                             00000003
+BRG12                             00000004
+BRG13                             00000005
+BRG14                             00000006
+BRG15                             00000007
+BRG16                             00000003
+BRG2                              00000002
+BRG3                              00000003
+BRG4                              00000004
+BRG5                              00000005
+BRG6                              00000006
+BRG7                              00000007
+BRG8                              00000000
+BRG9                              00000001
+MPASM 5.87  14_SUBRUTINA_DE_TIEMPO_1_VARIABL   1-7-2021  16:03:46         PAGE 12
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+BRGH                              00000002
+C                                 00000000
+C1CH0                             00000000
+C1CH1                             00000001
+C1IE                              00000005
+C1IF                              00000005
+C1OE                              00000005
+C1ON                              00000007
+C1OUT                             00000006
+C1POL                             00000004
+C1R                               00000002
+C1RSEL                            00000005
+C1SEN                             00000005
+C2CH0                             00000000
+C2CH1                             00000001
+C2IE                              00000006
+C2IF                              00000006
+C2OE                              00000005
+C2ON                              00000007
+C2OUT                             00000006
+C2POL                             00000004
+C2R                               00000002
+C2REN                             00000004
+C2RSEL                            00000004
+C2SYNC                            00000000
+CCP1CON                           00000017
+CCP1IE                            00000002
+CCP1IF                            00000002
+CCP1M0                            00000000
+CCP1M1                            00000001
+CCP1M2                            00000002
+CCP1M3                            00000003
+CCP1X                             00000005
+CCP1Y                             00000004
+CCP2CON                           0000001D
+CCP2IE                            00000000
+CCP2IF                            00000000
+CCP2M0                            00000000
+CCP2M1                            00000001
+CCP2M2                            00000002
+CCP2M3                            00000003
+CCP2X                             00000005
+CCP2Y                             00000004
+CCPR1                             00000015
+CCPR1H                            00000016
+CCPR1L                            00000015
+CCPR2                             0000001B
+CCPR2H                            0000001C
+CCPR2L                            0000001B
+CHS0                              00000002
+CHS1                              00000003
+CHS2                              00000004
+CHS3                              00000005
+MPASM 5.87  14_SUBRUTINA_DE_TIEMPO_1_VARIABL   1-7-2021  16:03:46         PAGE 13
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+CKE                               00000006
+CKP                               00000004
+CM1CON0                           00000107
+CM2CON0                           00000108
+CM2CON1                           00000109
+CREN                              00000004
+CSRC                              00000007
+D                                 00000005
+DATA_ADDRESS                      00000005
+DC                                00000001
+DC1B0                             00000004
+DC1B1                             00000005
+DC2B0                             00000004
+DC2B1                             00000005
+D_A                               00000005
+D_NOT_A                           00000005
+ECCPAS                            0000009C
+ECCPAS0                           00000004
+ECCPAS1                           00000005
+ECCPAS2                           00000006
+ECCPASE                           00000007
+EEADR                             0000010D
+EEADRH                            0000010F
+EECON1                            0000018C
+EECON2                            0000018D
+EEDAT                             0000010C
+EEDATA                            0000010C
+EEDATH                            0000010E
+EEIE                              00000004
+EEIF                              00000004
+EEPGD                             00000007
+F                                 00000001
+FERR                              00000002
+FSR                               00000004
+FVREN                             00000000
+GCEN                              00000007
+GIE                               00000007
+GO                                00000001
+GO_DONE                           00000001
+GO_NOT_DONE                       00000001
+HTS                               00000002
+I2C_DATA                          00000005
+I2C_READ                          00000002
+I2C_START                         00000003
+I2C_STOP                          00000004
+INDF                              00000000
+INICIO                            0000000B
+INTCON                            0000000B
+INTE                              00000004
+INTEDG                            00000006
+INTF                              00000001
+IOCB                              00000096
+IOCB0                             00000000
+MPASM 5.87  14_SUBRUTINA_DE_TIEMPO_1_VARIABL   1-7-2021  16:03:46         PAGE 14
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+IOCB1                             00000001
+IOCB2                             00000002
+IOCB3                             00000003
+IOCB4                             00000004
+IOCB5                             00000005
+IOCB6                             00000006
+IOCB7                             00000007
+IRCF0                             00000004
+IRCF1                             00000005
+IRCF2                             00000006
+IRP                               00000007
+LTS                               00000001
+MC1OUT                            00000007
+MC2OUT                            00000006
+MSK                               00000093
+MSK0                              00000000
+MSK1                              00000001
+MSK2                              00000002
+MSK3                              00000003
+MSK4                              00000004
+MSK5                              00000005
+MSK6                              00000006
+MSK7                              00000007
+NOT_A                             00000005
+NOT_ADDRESS                       00000005
+NOT_BO                            00000000
+NOT_BOR                           00000000
+NOT_DONE                          00000001
+NOT_PD                            00000003
+NOT_POR                           00000001
+NOT_RBPU                          00000007
+NOT_RC8                           00000006
+NOT_T1SYNC                        00000002
+NOT_TO                            00000004
+NOT_TX8                           00000006
+NOT_W                             00000002
+NOT_WRITE                         00000002
+OERR                              00000001
+OPTION_REG                        00000081
+OSCCON                            0000008F
+OSCTUNE                           00000090
+OSFIE                             00000007
+OSFIF                             00000007
+OSTS                              00000003
+P                                 00000004
+P1M0                              00000006
+P1M1                              00000007
+PCL                               00000002
+PCLATH                            0000000A
+PCON                              0000008E
+PDC0                              00000000
+PDC1                              00000001
+PDC2                              00000002
+MPASM 5.87  14_SUBRUTINA_DE_TIEMPO_1_VARIABL   1-7-2021  16:03:46         PAGE 15
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+PDC3                              00000003
+PDC4                              00000004
+PDC5                              00000005
+PDC6                              00000006
+PEIE                              00000006
+PEN                               00000002
+PIE1                              0000008C
+PIE2                              0000008D
+PIR1                              0000000C
+PIR2                              0000000D
+PORTA                             00000005
+PORTB                             00000006
+PORTC                             00000007
+PORTD                             00000008
+PORTE                             00000009
+PR2                               00000092
+PRSEN                             00000007
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+PSSAC0                            00000002
+PSSAC1                            00000003
+PSSBD0                            00000000
+PSSBD1                            00000001
+PSTRCON                           0000009D
+PULSR                             00000002
+PULSS                             00000003
+PWM1CON                           0000009B
+R                                 00000002
+RA0                               00000000
+RA1                               00000001
+RA2                               00000002
+RA3                               00000003
+RA4                               00000004
+RA5                               00000005
+RA6                               00000006
+RA7                               00000007
+RB0                               00000000
+RB1                               00000001
+RB2                               00000002
+RB3                               00000003
+RB4                               00000004
+RB5                               00000005
+RB6                               00000006
+RB7                               00000007
+RBIE                              00000003
+RBIF                              00000000
+RC0                               00000000
+RC1                               00000001
+RC2                               00000002
+RC3                               00000003
+RC4                               00000004
+MPASM 5.87  14_SUBRUTINA_DE_TIEMPO_1_VARIABL   1-7-2021  16:03:46         PAGE 16
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+RC5                               00000005
+RC6                               00000006
+RC7                               00000007
+RC8_9                             00000006
+RC9                               00000006
+RCD8                              00000000
+RCEN                              00000003
+RCIDL                             00000006
+RCIE                              00000005
+RCIF                              00000005
+RCREG                             0000001A
+RCSTA                             00000018
+RD                                00000000
+RD0                               00000000
+RD1                               00000001
+RD2                               00000002
+RD3                               00000003
+RD4                               00000004
+RD5                               00000005
+RD6                               00000006
+RD7                               00000007
+RE0                               00000000
+RE1                               00000001
+RE2                               00000002
+RE3                               00000003
+READ_WRITE                        00000002
+RP0                               00000005
+RP1                               00000006
+RSEN                              00000001
+RX9                               00000006
+RX9D                              00000000
+R_NOT_W                           00000002
+R_W                               00000002
+S                                 00000003
+SBOREN                            00000004
+SCKP                              00000004
+SCS                               00000000
+SEN                               00000000
+SENDB                             00000003
+SMP                               00000007
+SPBRG                             00000099
+SPBRGH                            0000009A
+SPEN                              00000007
+SR0                               00000006
+SR1                               00000007
+SRCON                             00000185
+SREN                              00000005
+SSPADD                            00000093
+SSPBUF                            00000013
+SSPCON                            00000014
+SSPCON2                           00000091
+SSPEN                             00000005
+SSPIE                             00000003
+MPASM 5.87  14_SUBRUTINA_DE_TIEMPO_1_VARIABL   1-7-2021  16:03:46         PAGE 17
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+SSPIF                             00000003
+SSPM0                             00000000
+SSPM1                             00000001
+SSPM2                             00000002
+SSPM3                             00000003
+SSPMSK                            00000093
+SSPOV                             00000006
+SSPSTAT                           00000094
+ST1V                              00000011
+ST2V                              00000017
+ST2V_V1                           00000019
+ST3V                              00000021
+ST3V_V1                           00000023
+ST3V_V2                           00000025
+STATUS                            00000003
+STRA                              00000000
+STRB                              00000001
+STRC                              00000002
+STRD                              00000003
+STRSYNC                           00000004
+SWDTEN                            00000000
+SYNC                              00000004
+T0CS                              00000005
+T0IE                              00000005
+T0IF                              00000002
+T0SE                              00000004
+T1CKPS0                           00000004
+T1CKPS1                           00000005
+T1CON                             00000010
+T1GINV                            00000007
+T1GIV                             00000007
+T1GSS                             00000001
+T1INSYNC                          00000002
+T1OSCEN                           00000003
+T1SYNC                            00000002
+T2CKPS0                           00000000
+T2CKPS1                           00000001
+T2CON                             00000012
+TMR0                              00000001
+TMR0IE                            00000005
+TMR0IF                            00000002
+TMR1                              0000000E
+TMR1CS                            00000001
+TMR1GE                            00000006
+TMR1H                             0000000F
+TMR1IE                            00000000
+TMR1IF                            00000000
+TMR1L                             0000000E
+TMR1ON                            00000000
+TMR2                              00000011
+TMR2IE                            00000001
+TMR2IF                            00000001
+TMR2ON                            00000002
+MPASM 5.87  14_SUBRUTINA_DE_TIEMPO_1_VARIABL   1-7-2021  16:03:46         PAGE 18
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+TOUTPS0                           00000003
+TOUTPS1                           00000004
+TOUTPS2                           00000005
+TOUTPS3                           00000006
+TRISA                             00000085
+TRISA0                            00000000
+TRISA1                            00000001
+TRISA2                            00000002
+TRISA3                            00000003
+TRISA4                            00000004
+TRISA5                            00000005
+TRISA6                            00000006
+TRISA7                            00000007
+TRISB                             00000086
+TRISB0                            00000000
+TRISB1                            00000001
+TRISB2                            00000002
+TRISB3                            00000003
+TRISB4                            00000004
+TRISB5                            00000005
+TRISB6                            00000006
+TRISB7                            00000007
+TRISC                             00000087
+TRISC0                            00000000
+TRISC1                            00000001
+TRISC2                            00000002
+TRISC3                            00000003
+TRISC4                            00000004
+TRISC5                            00000005
+TRISC6                            00000006
+TRISC7                            00000007
+TRISD                             00000088
+TRISD0                            00000000
+TRISD1                            00000001
+TRISD2                            00000002
+TRISD3                            00000003
+TRISD4                            00000004
+TRISD5                            00000005
+TRISD6                            00000006
+TRISD7                            00000007
+TRISE                             00000089
+TRISE0                            00000000
+TRISE1                            00000001
+TRISE2                            00000002
+TRISE3                            00000003
+TRMT                              00000001
+TUN0                              00000000
+TUN1                              00000001
+TUN2                              00000002
+TUN3                              00000003
+TUN4                              00000004
+TX8_9                             00000006
+TX9                               00000006
+MPASM 5.87  14_SUBRUTINA_DE_TIEMPO_1_VARIABL   1-7-2021  16:03:46         PAGE 19
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+TX9D                              00000000
+TXD8                              00000000
+TXEN                              00000005
+TXIE                              00000004
+TXIF                              00000004
+TXREG                             00000019
+TXSTA                             00000098
+UA                                00000001
+ULPWUE                            00000005
+ULPWUIE                           00000002
+ULPWUIF                           00000002
+VCFG0                             00000004
+VCFG1                             00000005
+VR0                               00000000
+VR1                               00000001
+VR2                               00000002
+VR3                               00000003
+VRCON                             00000097
+VREN                              00000007
+VROE                              00000006
+VRR                               00000005
+VRSS                              00000004
+W                                 00000000
+WCOL                              00000007
+WDTCON                            00000105
+WDTPS0                            00000001
+WDTPS1                            00000002
+WDTPS2                            00000003
+WDTPS3                            00000004
+WPUB                              00000095
+WPUB0                             00000000
+WPUB1                             00000001
+WPUB2                             00000002
+WPUB3                             00000003
+WPUB4                             00000004
+WPUB5                             00000005
+WPUB6                             00000006
+WPUB7                             00000007
+WR                                00000001
+WREN                              00000002
+WRERR                             00000003
+WUE                               00000001
+Z                                 00000002
+_BOR21V                           00003EFF
+_BOR40V                           00003FFF
+_BOR4V_BOR21V                     00003EFF
+_BOR4V_BOR40V                     00003FFF
+_BOREN_NSLEEP                     00003EFF
+_BOREN_OFF                        00003CFF
+_BOREN_ON                         00003FFF
+_BOREN_SBODEN                     00003DFF
+_BOR_NSLEEP                       00003EFF
+_BOR_OFF                          00003CFF
+MPASM 5.87  14_SUBRUTINA_DE_TIEMPO_1_VARIABL   1-7-2021  16:03:46         PAGE 20
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+_BOR_ON                           00003FFF
+_BOR_SBODEN                       00003DFF
+_CONFIG1                          00002007
+_CONFIG2                          00002008
+_CPD_OFF                          00003FFF
+_CPD_ON                           00003F7F
+_CP_OFF                           00003FFF
+_CP_ON                            00003FBF
+_DEBUG_OFF                        00003FFF
+_DEBUG_ON                         00001FFF
+_DEVID1                           00002006
+_EC_OSC                           00003FFB
+_EXTRC                            00003FFF
+_EXTRCIO                          00003FFE
+_EXTRC_OSC_CLKOUT                 00003FFF
+_EXTRC_OSC_NOCLKOUT               00003FFE
+_FCMEN_OFF                        000037FF
+_FCMEN_ON                         00003FFF
+_FOSC_EC                          00003FFB
+_FOSC_EXTRC_CLKOUT                00003FFF
+_FOSC_EXTRC_NOCLKOUT              00003FFE
+_FOSC_HS                          00003FFA
+_FOSC_INTRC_CLKOUT                00003FFD
+_FOSC_INTRC_NOCLKOUT              00003FFC
+_FOSC_LP                          00003FF8
+_FOSC_XT                          00003FF9
+_HS_OSC                           00003FFA
+_IDLOC0                           00002000
+_IDLOC1                           00002001
+_IDLOC2                           00002002
+_IDLOC3                           00002003
+_IESO_OFF                         00003BFF
+_IESO_ON                          00003FFF
+_INTOSC                           00003FFD
+_INTOSCIO                         00003FFC
+_INTRC_OSC_CLKOUT                 00003FFD
+_INTRC_OSC_NOCLKOUT               00003FFC
+_LP_OSC                           00003FF8
+_LVP_OFF                          00002FFF
+_LVP_ON                           00003FFF
+_MCLRE_OFF                        00003FDF
+_MCLRE_ON                         00003FFF
+_PWRTE_OFF                        00003FFF
+_PWRTE_ON                         00003FEF
+_WDTE_OFF                         00003FF7
+_WDTE_ON                          00003FFF
+_WDT_OFF                          00003FF7
+_WDT_ON                           00003FFF
+_WRT_1FOURTH                      00003BFF
+_WRT_256                          00003DFF
+_WRT_HALF                         000039FF
+_WRT_OFF                          00003FFF
+_XT_OSC                           00003FF9
+MPASM 5.87  14_SUBRUTINA_DE_TIEMPO_1_VARIABL   1-7-2021  16:03:46         PAGE 21
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+__16F887                          00000001
+
+Errors   :     0
+Warnings :     0 reported,     0 suppressed
+Messages :     2 reported,     0 suppressed
+
+

@@ -1,0 +1,1206 @@
+;26.- Control de Pantalla LCD.
+	    PROCESSOR	16F887
+
+;Se deben declarar 2 palabras de configuración de 14 bits para setear el PIC
+;usando los registros 2007 y 2008 hexadecimales (que no pertenecen a la RAM).
+	    __CONFIG	0X2007, 0X23E4
+;La primera palabra de configuración que se guarda en el registro 0X2007 y sus 
+;bits significan:
+;1:   Apaga el modo DEBUG que revisa el código línea por línea (bit 13).
+;0:   Apaga el Modo de Baja Tensión y habilita el Puerto B como entradas y 
+;salidas digitales o analógicas (bit 12). 
+;1:   Activa el modo Reloj a Prueba de Fallas que monitorea si el oscilador 
+;funciona bien (bit 11).
+;0:   Desactiva el divisor de reloj, dejando la frecuencia default del 
+;oscilador interno en el PIC que es de 4MHz (bit 10).
+;11:  Activa el Brown-Out todo el tiempo, que reiniciará al PIC si el valor de 
+;voltaje en el oscilador baja de cierto rango (bits 9 y 8).
+;1:   Apaga el modo de protección de escritura en la memoria RAM (bit 7).
+;1:   Apaga el modo de protección de escritura en la memoria FLASH (bit 6).
+;1:   Hace que el pin RE3 del puerto E funcione como reset, reiniciando el PIC 
+;cuando le ingrese un 1 lógico de una señal digital (bit 5).
+;0:   Enciende el Power-up Timer, hace que el PIC tarde 75 milisegundos en 
+;encenderse para proteger al microcontrolador de las variaciones que vienen de 
+;la fuente de alimentación (bit 4).
+;0:   Apaga el Watchdog (bit 3).
+;100:  Elige el oscilador tipo INTOSCIO, que usa el oscilador interno incluido 
+;en el PIC de 4 MHz y configura los pines RA6 y RA7 para que ambos sean 
+;entradas/salidas analógicas o digitales (bits 2, 1 y 0).
+;Por lo tanto la palabra de configuración es 10 1011 1110 0100 = 2BE4
+	    __CONFIG	0X2008, 0X3FFF
+;La segunda palabra de configuración que se guarda en el registro 0X2008 y sus 
+;bits significan:
+;111:        Siempre estarán de esta manera, no se les debe cambiar (bits 13, 
+;12 y 11).
+;11:         Apaga el modo de protección de escritura en la memoria FLASH (bits 
+;10 y 9). 
+;1:          Hace que el Brown-Out reinicie el PIC cuando la señal de reloj baje 
+;de 4V (bit 8).
+;1111 1111:  Siempre estarán de esta manera, no se les debe cambiar (bits 7, 6, 
+;5, 4, 3, 2, 1 y 0).
+;Por lo tanto la palabra de configuración es 11 1111 1111 1111 = 3FFF
+	    
+;La directiva INCLUDE sirve para abrir un archivo de texto plano, copiar todo 
+;su contenido y pegarlo en el programa, en este caso se usa para añadir el 
+;archivo P16F887.INC que incluye las 35 instrucciones del PIC16F887 a mi 
+;programa junto con sus directivas EQU para que las pueda usar.
+	    INCLUDE	<P16F887.INC>
+	    ORG		0X0000
+W_R	    EQU		0X70
+ST_R	    EQU		0X71
+PC_R	    EQU		0X72
+CENTI	    EQU		0X25
+DECI	    EQU		0X20
+UNID	    EQU		0X21
+DECE	    EQU		0X22
+CENT	    EQU		0X23
+MILL	    EQU		0X24
+T0R	    EQU		0X26
+V_ALTO	    EQU		0X27
+V_BAJO	    EQU		0X28
+	    GOTO	INICIO
+	    NOP
+	    NOP
+	    NOP
+	    INCLUDE	<C:\Users\diego\OneDrive\Documents\MechaBible\p_MPLAB (Ensamblador)\2.-Ejercicios PIC16F887\RecuperaInterrupcion.asm>		
+	    GOTO	RSI
+	    INCLUDE	<C:\Users\diego\OneDrive\Documents\MechaBible\p_MPLAB (Ensamblador)\2.-Ejercicios PIC16F887\TablaDisplay7Segmentos.asm> 
+	    ;Tabla que enciende los leds DP, G, F, E, D, C, B y A de los displays de 7 segmentos.
+	    INCLUDE	<C:\Users\diego\OneDrive\Documents\MechaBible\p_MPLAB (Ensamblador)\2.-Ejercicios PIC16F887\SubRutinaTiempo.asm>
+	    ;Subrutinas de tiempo de 1, 2 y 3 variables.
+	    
+INICIO:	    CLRF	PORTD
+	    CLRF	PORTC
+	    CLRF	PORTA
+	    BSF		STATUS,RP0
+	    BSF		STATUS,RP1 
+	    ;BANCO 3
+	    MOVLW	B'11111111' ;PE -> ANALOGICO
+	    MOVWF	ANSEL	    ;PA = AN, PA3 = AN = VREF+;
+	    CLRF	ANSELH	    ;PB DIGITAL.
+	    ;BANCO 1
+	    BCF		STATUS,RP1 ;B1.
+	    CLRF	TRISD
+	    MOVLW	B'00110110'
+	    MOVWF	PORTC
+	    ;CONFIGURACION PARA INTERRUPCIONES POR TECLADO MATRICIAL:
+	    MOVLW	0XFF
+	    MOVWF	IOCB ;TODOS LOS PINES DEL PORTB SON SENSIBLES AL CAMBIO
+	    MOVLW	0X0F
+	    MOVWF	TRISB
+	    BCF		OPTION_REG,7 ;ACTIVACION DE LAS RESISTENCIAS DE ELEVACIÓN 14
+	    MOVLW	0XFF
+	    MOVWF	WPUB ;TODAS LAS RESISTENCIAS
+	    MOVLW	B'00010000' ;AJUSTE_IZQ,VREF-=VSS,VREF+=AN3
+	    MOVWF	ADCON1
+	    ;BANCO 0
+	    CLRF	CENTI
+	    CLRF	DECI
+	    CLRF	UNID
+	    CLRF	DECE
+	    CLRF	CENT
+	    CLRF	MILL
+	    BCF		STATUS,RP0 ;B0
+	    ;CONFIGURACIÓN DEL PERIFÉRICO QUE INTERRUMPIR:
+	    MOVF	PORTB,W
+	    BCF		INTCON,RBIF ;BANDERA ABAJO INT ON CHANGE
+	    BSF		INTCON,RBIE ;PERMISO PARA QUE INT ON CHANGE SEA FUENTE DE INTERRUP
+	    BSF		INTCON,GIE ;PERMISO GLOBAL DE INT
+;RUTINA DE SERVICIO DE INTERRUPCION:
+RSI:	    CLRF	PORTD
+	    CALL	T25MS
+	    BTFSS	PORTB,0
+	    GOTO	REN1
+	    BTFSS	PORTB,1
+	    GOTO	REN2
+	    BTFSS	PORTB,2
+	    GOTO	REN3
+REN4:	    CALL	CAMBIO_PB
+	    BTFSS	PORTB,4
+	    GOTO	REN4COL1
+	    BTFSS	PORTB,5
+	    GOTO	REN4COL2
+	    BTFSS	PORTB,6
+	    GOTO	REN4COL3
+REN4COL4:   BTFSS	PORTB,7
+	    GOTO $-1
+	    GOTO	REGRESA
+REN3:	    CALL	CAMBIO_PB
+	    BTFSS	PORTB,4
+	    GOTO	REN3COL1
+	    BTFSS	PORTB,5
+	    GOTO	REN3COL2
+	    BTFSS	PORTB,6
+	    GOTO	REN3COL3
+REN3COL4:   BTFSS	PORTB,7
+	    GOTO	$-1
+	    GOTO	REGRESA
+REN2:	    CALL	CAMBIO_PB
+	    BTFSS	PORTB,4
+	    GOTO	REN2COL1
+	    BTFSS	PORTB,5
+	    GOTO	REN2COL2
+	    BTFSS	PORTB,6
+	    GOTO	REN2COL3
+REN2COL4:   BTFSS	PORTB,7
+	    GOTO	$-1
+	    
+	    GOTO	REGRESA
+REN1:	    CALL CAMBIO_PB
+	    BTFSS	PORTB,4
+	    GOTO	REN1COL1
+	    BTFSS	PORTB,5
+	    GOTO	REN1COL2
+	    BTFSS	PORTB,6
+	    GOTO	REN1COL3
+; POT 2
+REN1COL4:   CLRF	CENTI
+	    CLRF	DECI
+	    CLRF	UNID
+	    CLRF	DECE
+	    CLRF	CENT
+	    CLRF	MILL
+	    MOVLW	B'11011001'
+	    MOVWF	ADCON0 ;OSC=RC,CHS=AN6,DONE,ADON.
+	    CALL	T_ESTA
+OTRA14:	    BSF		ADCON0,1
+	    BTFSC	ADCON0,1 ; YA TERMINO DE HACER LA CONVERSIÓN?
+	    GOTO	$-1
+	    CLRF	V_ALTO
+	    CLRF	V_BAJO
+	    MOVF	ADRESH,W ; RESPALDO EL DATO
+	    MOVWF	V_ALTO ;
+	    CALL	CONVERSION
+; DESPLEGANDO VALORES EN LCD
+	    BCF		PORTC,0 ; MODO INSTRUCCION
+	    MOVLW	0X01 ; LIMPIA DISPLAY
+	    MOVWF	PORTD
+	    CALL	COMANDO
+	    MOVLW	0X0C ; SELECCIONA LA PRIMER LINEA
+	    MOVWF	PORTD
+	    CALL	COMANDO ; DA DE ALTA EL COMANDO
+	    MOVLW	0X3C ; SE CONFIGURA EL CURSOR
+	    MOVWF	PORTD
+	    CALL	COMANDO
+	    BSF		PORTC,0 ; MODO DATO
+	    CALL	POT_2
+	    CALL	LINEA2
+	    MOVF	MILL,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	CENT,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'.'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	DECE,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	UNID,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	DECI,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	CENTI,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'V'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    CALL	T2TAD
+	    BTFSS	PORTB,7
+	    GOTO	$-1
+	    CLRF	PORTD
+	    GOTO	REGRESA
+REN4COL3:   BTFSS	PORTB,6
+	    GOTO	$-1
+	    GOTO	REGRESA
+REN3COL3:   BTFSS	PORTB,6
+	    GOTO	$-1
+	    GOTO	REGRESA
+;FUENTE 3
+REN2COL3:   CLRF	CENTI
+	    CLRF	DECI
+	    CLRF	UNID
+	    CLRF	DECE
+	    CLRF	CENT
+	    CLRF	MILL
+	    MOVLW	B'11011101'
+	    MOVWF	ADCON0 ;OSC=RC,CHS=AN4,DONE,ADON.
+	    CALL	T_ESTA
+OTRA23:	    BSF		ADCON0,1
+	    BTFSC	ADCON0,1 ; YA TERMINO DE HACER LA CONVERSIÓN?
+	    GOTO	$-1
+	    CLRF	V_ALTO
+	    CLRF	V_BAJO
+	    MOVF	ADRESH,W ; RESPALDO EL DATO
+	    MOVWF	V_ALTO
+	    CALL	CONVERSION
+; DESPLEGANDO VALORES EN LCD
+	    BCF		PORTC,0 ; MODO INSTRUCCION
+	    MOVLW	0X01 ; LIMPIA DISPLAY
+	    MOVWF	PORTD
+	    CALL	COMANDO
+	    MOVLW	0X0C ; SELECCIONA LA PRIMER LINEA
+	    MOVWF	PORTD
+	    CALL	COMANDO ; DA DE ALTA EL COMANDO
+	    MOVLW	0X3C ; SE CONFIGURA EL CURSOR
+	    MOVWF	PORTD
+	    CALL	COMANDO
+	    BSF		PORTC,0 ; MODO DATO
+	    CALL	FUENTE_3
+	    CALL	LINEA2
+	    MOVF	MILL,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	CENT,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'.'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	DECE,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	UNID,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	DECI,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	CENTI,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'V'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    CALL	T2TAD
+	    BTFSS	PORTB,6
+	    GOTO	$-1
+	    CLRF	PORTD
+	    GOTO	REGRESA
+; POT 1
+REN1COL3:   CLRF	CENTI
+	    CLRF	DECI
+	    CLRF	UNID
+	    CLRF	DECE
+	    CLRF	CENT
+	    CLRF	MILL
+	    MOVLW	B'11010101'
+	    MOVWF	ADCON0 ;OSC=RC,CHS=AN5,DONE,ADON.
+	    CALL	T_ESTA
+	    BSF		ADCON0,1
+	    BTFSC	ADCON0,1 ; YA TERMINO DE HACER LA CONVERSIÓN?
+	    GOTO	$-1
+	    CLRF	V_ALTO
+	    CLRF	V_BAJO
+	    MOVF	ADRESH,W ; RESPALDO EL DATO
+	    MOVWF	V_ALTO
+	    CALL	CONVERSION
+	    ; DESPLEGANDO VALORES EN LCD
+	    BCF		PORTC,0 ; MODO INSTRUCCION
+	    MOVLW	0X01 ; LIMPIA DISPLAY
+	    MOVWF	PORTD
+	    CALL	COMANDO
+	    MOVLW	0X0C ; SELECCIONA LA PRIMER LINEA
+	    MOVWF	PORTD
+	    CALL	COMANDO ; DA DE ALTA EL COMANDO
+	    MOVLW	0X3C ; SE CONFIGURA EL CURSOR
+	    MOVWF	PORTD
+	    CALL	COMANDO
+	    BSF		PORTC,0 ; MODO DATO
+	    CALL	POT_1
+	    CALL	LINEA2
+	    MOVF	MILL,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	CENT,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'.'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	DECE,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	UNID,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	DECI,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	CENTI,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'V'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    CALL	T2TAD
+	    BTFSS	PORTB,6
+	    GOTO	$-1
+	    CLRF	PORTD
+	    GOTO	REGRESA
+REN4COL2:   BTFSS	PORTB,5
+	    GOTO	$-1
+	    GOTO	REGRESA
+;PWM CON POT2
+REN3COL2:   MOVLW	B'11011001'
+	    MOVWF	ADCON0 ;OSC=RC,CHS=AN6,DONE,ADON.
+	    CALL	T_ESTA
+	    BSF		ADCON0,1
+	    BTFSC	ADCON0,1 ; YA TERMINO DE HACER LA CONVERSIÓN?
+	    GOTO	$-1
+	    BCF		STATUS,RP1 ;B1.
+	    MOVLW	.49 ;Fpwm = 5 KHz.
+	    MOVWF	PR2
+	    BCF		STATUS,RP0 ;B0
+	    BSF		CCP2CON,3
+	    BSF		CCP2CON,2 ;TIMER 2 COMO PWM.
+	    MOVF	ADRESH,W
+	    MOVWF	CCPR2L ;AJUSTANDO EL PERIODO DE CICLO UTIL
+;MOVF ADRESL,W
+	    BCF		PIR1,TMR2IF ;BAJAMOS BANDERA
+	    BCF		T2CON,1
+	    BCF		T2CON,0 ;PRESCALER = 1
+	    BSF		T2CON,TMR2ON ;HABILITA TIMER2
+	    BTFSS	PIR1,TMR2IF ; ESPERAR A QUE SE BAJE LA BANDERA
+	    GOTO	$-1
+	    BSF		STATUS,RP0 ;B1
+	    MOVLW	B'11110100'
+	    MOVWF	TRISC ; PONER LOS BITS DE SALIDA RC1 Y RC2
+	    BTFSS	PORTB,5
+	    GOTO	$-1
+	    CLRF	PORTD
+	    GOTO	REGRESA
+; FUENTE 2
+REN2COL2:   CLRF	CENTI
+	    CLRF	DECI
+	    CLRF	UNID
+	    CLRF	DECE
+	    CLRF	CENT
+	    CLRF	MILL
+	    MOVLW	B'11010001'
+	    MOVWF	ADCON0 ;OSC=RC,CHS=AN4,DONE,ADON.
+	    CALL	T_ESTA
+OTRA22:	    BSF		ADCON0,1
+	    BTFSC	ADCON0,1 ; YA TERMINO DE HACER LA CONVERSIÓN?
+	    GOTO	$-1
+	    CLRF	V_ALTO
+	    CLRF	V_BAJO
+	    MOVF	ADRESH,W ; RESPALDO EL DATO
+	    MOVWF	V_ALTO
+	    CALL	CONVERSION
+;DESPLEGANDO VALORES EN LCD
+	    BCF		PORTC,0 ; MODO INSTRUCCION
+	    MOVLW	0X01 ; LIMPIA DISPLAY
+	    MOVWF	PORTD
+	    CALL	COMANDO
+	    MOVLW	0X0C ; SELECCIONA LA PRIMER LINEA
+	    MOVWF	PORTD
+	    CALL	COMANDO ; DA DE ALTA EL COMANDO
+	    MOVLW	0X3C ; SE CONFIGURA EL CURSOR
+	    MOVWF	PORTD
+	    CALL	COMANDO
+	    BSF		PORTC,0 ; MODO DATO
+	    CALL	FUENTE_2
+	    CALL	LINEA2
+	    MOVF	MILL,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	CENT,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'.'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	DECE,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	UNID,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	DECI,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	CENTI,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'V'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    CALL	T2TAD
+	    BTFSS	PORTB,5
+	    GOTO	$-1
+	    CLRF	PORTD
+	    GOTO	REGRESA
+; LM35 2
+REN1COL2:   CLRF	CENTI
+	    CLRF	DECI
+	    CLRF	UNID
+	    CLRF	DECE
+	    CLRF	CENT
+	    CLRF	MILL
+	    MOVLW	B'11000101'
+	    MOVWF	ADCON0 ;OSC=RC,CHS=AN1,DONE,ADON.
+	    CALL	T_ESTA
+OTRA12:	    BSF		ADCON0,1
+	    BTFSC	ADCON0,1 ; YA TERMINO DE HACER LA CONVERSIÓN?
+	    GOTO	$-1
+	    CLRF	V_ALTO
+	    CLRF	V_BAJO
+	    MOVF	ADRESH,W ; RESPALDO EL DATO
+	    MOVWF	V_ALTO 
+	    CALL	CONVERSION
+; DESPLEGANDO VALORES EN LCD
+	    BCF		PORTC,0 ; MODO INSTRUCCION
+	    MOVLW	0X01 ; LIMPIA DISPLAY
+	    MOVWF	PORTD
+	    CALL	COMANDO
+	    MOVLW	0X0C ; SELECCIONA LA PRIMER LINEA
+	    MOVWF	PORTD
+	    CALL	COMANDO ; DA DE ALTA EL COMANDO
+	    MOVLW	0X3C ; SE CONFIGURA EL CURSOR
+	    MOVWF	PORTD
+	    CALL	COMANDO
+	    BSF		PORTC,0 ; MODO DATO
+	    CALL	LM35_2
+	    CALL	LINEA2
+	    MOVLW	'T'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'='
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	MILL,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	CENT,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	DECE,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	UNID,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'.'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	DECI,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	CENTI,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'C'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    CALL	T2TAD
+	    BTFSS	PORTB,5
+	    GOTO	$-1
+	    CLRF	PORTD
+	    GOTO	REGRESA
+REN4COL1:   BTFSS	PORTB,4
+	    GOTO	$-1
+	    GOTO	REGRESA
+;PWM CON POT1
+REN3COL1:   MOVLW	B'11010101'
+	    MOVWF	ADCON0 ;OSC=RC,CHS=AN5,DONE,ADON.
+	    CALL	T_ESTA
+	    BSF		ADCON0,1
+	    BTFSC	ADCON0,1 ; YA TERMINO DE HACER LA CONVERSIÓN?
+	    GOTO	$-1
+	    BCF		STATUS,RP1 ;B1.
+	    MOVLW	.49 ;Fpwm = 5 KHz.
+	    MOVWF	PR2
+	    BCF		STATUS,RP0 ;B0
+	    BSF		CCP1CON,3
+	    BSF		CCP1CON,2 ;TIMER 2 COMO PWM.
+	    MOVF	ADRESH,W
+	    MOVWF	CCPR1L ;AJUSTANDO EL PERIODO DE CICLO UTIL
+;MOVF ADRESL,W
+	    BCF		PIR1,TMR2IF ;BAJAMOS BANDERA
+	    BCF		T2CON,1
+	    BCF		T2CON,0 ;PRESCALER = 1
+	    BSF		T2CON,TMR2ON ;HABILITA TIMER2
+	    BTFSS	PIR1,TMR2IF ; ESPERAR A QUE SE BAJE LA BANDERA
+	    GOTO	$-1
+	    BSF		STATUS,RP0 ;B1
+	    MOVLW	B'11110010'
+	    MOVWF	TRISC ; PONER LOS BITS DE SALIDA RC1 Y RC2
+	    BTFSS	PORTB,4
+	    GOTO	$-1
+	    GOTO	REGRESA
+; FUENTE 1
+REN2COL1:   CLRF	CENTI
+	    CLRF	DECI
+	    CLRF	UNID
+	    CLRF	DECE
+	    CLRF	CENT
+	    CLRF	MILL
+	    BCF		PORTC,0 ; MODO INSTRUCCION
+	    MOVLW	0X01 ; LIMPIA DISPLAY
+	    BSF		PORTC,0 ; MODO DATO
+	    MOVLW	B'11001001'
+	    MOVWF	ADCON0 ;OSC=RC,CHS=AN2,DONE,ADON.
+	    CALL	T_ESTA
+	    BSF		ADCON0,1 ; EMPIEZA LA CONVERSION
+	    BTFSC	ADCON0,1 ; YA TERMINO DE HACER LA CONVERSIÓN?
+	    GOTO	$-1
+	    CLRF	V_ALTO
+	    CLRF	V_BAJO
+	    MOVF	ADRESH,W ; RESPALDO EL DATO
+	    MOVWF	V_ALTO ;
+	    CALL	CONVERSION
+; DESPLEGANDO VALORES EN LCD
+	    BCF		PORTC,0 ; MODO INSTRUCCION
+	    MOVLW	0X01 ; LIMPIA DISPLAY
+	    MOVWF	PORTD
+	    CALL	COMANDO
+	    MOVLW	0X0C ; SELECCIONA LA PRIMER LINEA
+	    MOVWF	PORTD
+	    CALL	COMANDO ; DA DE ALTA EL COMANDO
+	    MOVLW	0X3C ; SE CONFIGURA EL CURSOR
+	    MOVWF	PORTD
+	    CALL	COMANDO
+	    BSF		PORTC,0 ; MODO DATO
+	    CALL	FUENTE_1
+	    CALL	LINEA2
+	    MOVF	MILL,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	CENT,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'.'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	DECE,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	UNID,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	DECI,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	CENTI,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'V'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    CALL	T2TAD
+	    BTFSS	PORTB,4
+	    GOTO	$-1
+	    CLRF	PORTD
+	    GOTO	REGRESA
+; LM35 1	    
+REN1COL1:   CLRF	CENTI
+	    CLRF	DECI
+	    CLRF	UNID
+	    CLRF	DECE
+	    CLRF	CENT
+	    CLRF	MILL
+	    MOVLW	B'11000001'
+	    MOVWF	ADCON0 ;OSC=RC,CHS=AN0,DONE,ADON.
+	    CALL	T_ESTA
+	    BSF		ADCON0,1
+	    BTFSC	ADCON0,1 ; YA TERMINO DE HACER LA CONVERSIÓN?
+	    GOTO	$-1
+	    CLRF	V_ALTO
+	    CLRF	V_BAJO
+	    MOVF	ADRESH,W ; RESPALDO EL DATO
+	    MOVWF	V_ALTO
+	    CALL	CONVERSION
+; DESPLEGANDO VALORES EN LCD
+	    BCF		PORTC,0 ; MODO INSTRUCCION
+	    MOVLW	0X01 ; LIMPIA DISPLAY
+	    MOVWF	PORTD
+	    CALL	COMANDO
+	    MOVLW	0X0C ; SELECCIONA LA PRIMER LINEA
+	    MOVWF	PORTD
+	    CALL	COMANDO ; DA DE ALTA EL COMANDO
+	    MOVLW	0X3C ; SE CONFIGURA EL CURSOR
+	    MOVWF	PORTD
+	    CALL	COMANDO
+	    BSF		PORTC,0 ; MODO DATO
+	    CALL	LM35_1
+	    CALL	LINEA2
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'T'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'='
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	MILL,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	CENT,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	DECE,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	UNID,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'.'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	DECI,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVF	CENTI,W
+	    CALL	LCD
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'C'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    CALL	T2TAD
+	    BTFSS	PORTB,4
+	    GOTO	$-1
+	    CLRF	PORTD
+REGRESA:    CALL	T25MS
+	    BSF		STATUS,RP0 
+	    ;BANCO 1
+	    MOVLW	0X0F
+	    MOVWF	TRISB
+	    BCF		OPTION_REG,7
+	    MOVLW	0XFF
+	    MOVWF	WPUB
+	    BCF		STATUS,RP0 ;B0
+	    CLRF	PORTB
+	    MOVF	PORTB,W
+	    BCF		INTCON,RBIF
+CAMBIO_PB:  BSF		STATUS,RP0 ;B1
+	    MOVLW	0XF0
+	    MOVWF	TRISB
+	    BCF		OPTION_REG,7
+	    MOVLW	0XFF
+	    MOVWF	WPUB
+	    BCF		STATUS,RP0 ;B0
+	    CLRF	PORTB
+	    RETURN
+; ------------------------------ SUBRUTINAS -------------------------------	    
+CONVERSION: 
+CONT_MILL:  MOVLW	.1000
+	    SUBWF	V_ALTO,F
+	    BTFSS	STATUS, C
+	    GOTO	CONTINUA_CENT
+	    INCF	MILL,F
+	    GOTO	CONT_MILL
+CONTINUA_CENT:
+	    MOVLW	.1000
+	    ADDWF	V_ALTO
+CONT_CENT:  
+	    MOVLW	.100
+	    SUBWF	V_ALTO,F
+	    BTFSS	STATUS, C
+	    GOTO	CONTINUA_DECE
+	    INCF	CENT,F
+	    GOTO	CONT_CENT
+CONTINUA_DECE:
+	    MOVLW	.100
+	    ADDWF	V_ALTO,F
+CONT_DEC: 
+	    MOVLW	.10
+	    SUBWF	V_ALTO, F
+	    BTFSS	STATUS, C
+	    GOTO	CONTINUA_UNID
+	    INCF	DECE,F
+	    GOTO	CONT_DEC
+CONTINUA_UNID:
+	    MOVLW	.10
+	    ADDWF	V_ALTO,F
+	    MOVF	V_ALTO,W
+	    MOVWF	UNID
+	    CLRF	CENTI
+	    CLRF	DECI
+	    BSF		STATUS,RP0 ;B1
+	    MOVF	ADRESL,W
+	    BCF		STATUS,RP0 ;B0
+	    MOVWF	V_BAJO
+	    BTFSC	V_BAJO,7
+	    BSF		DECI,F
+	    BTFSC	V_BAJO,6
+	    BSF		CENTI,F
+	    RETURN
+; LM35 -> 1
+LM35_1:
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'L'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'M'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'3'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'5'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'1'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    RETURN
+; LM35 -> 2
+LM35_2:
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'L'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'M'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'3'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'5'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'2'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    RETURN
+; POT -> 1
+POT_1:
+	    MOVLW	'P'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'O'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'T'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'E'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'N'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'C'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'I'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'O'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'M'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'E'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'T'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'R'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'O'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'1'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    RETURN
+; POT -> 2
+POT_2:
+	    MOVLW	'P'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'O'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'T'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'E'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'N'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'C'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'I'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'O'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'M'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'E'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'T'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'R'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'O'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'2'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    RETURN
+; FUENTE -> 1
+FUENTE_1:
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'F'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'U'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'E'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'N'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'T'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'E'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'1'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    RETURN
+; FUENTE -> 2
+FUENTE_2:
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'F'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'U'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'E'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'N'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'T'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'E'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'2'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    RETURN
+; FUENTE -> 3
+FUENTE_3:
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'F'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'U'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'E'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'N'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'T'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'E'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'3'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    RETURN
+;-------------------------------------------------------------------------------
+MENSAJE1:
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'D'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'I'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'S'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'P'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'O'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'S'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'I'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'T'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'I'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'V'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'O'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'S'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    RETURN
+MENSAJE2:
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	' '
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'P'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'R'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'O'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'G'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'R'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'A'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'M'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'A'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'B'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'L'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'E'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    MOVLW	'S'
+	    MOVWF	PORTD
+	    CALL	ENVIAR
+	    RETURN
+; --------------------------- SUBRUTINAS DE LCD --------------------------- 
+LCD:	    BCF		PORTC,0 ; MODO INSTRUCCION
+	    MOVLW	0X01 ; LIMPIA DISPLAY
+	    MOVWF	PORTD
+	    CALL	COMANDO
+	    MOVLW	0X0C ; SELECCIONA LA PRIMER LINEA
+	    MOVWF	PORTD
+	    CALL	COMANDO ; DA DE ALTA EL COMANDO
+	    MOVLW	0X3C ; SE CONFIGURA EL CURSOR
+	    MOVWF	PORTD
+	    CALL	COMANDO
+	    BSF		PORTC,0 ; MODO DATO
+	    RETURN
+COMANDO:    BSF		PORTC,3 ;PONER EL ENABLE EN 1
+	    CALL	T25MS
+	    BCF		PORTC,3
+	    CALL	T25MS
+	    RETURN
+ENVIAR:	    BSF		PORTC,0 ; MODO DATO
+	    CALL	COMANDO
+	    RETURN
+LINEA2:	    BCF		PORTC,0 ; MODO INSTRUCCION
+	    MOVLW	0XC0 ; SELECCIONO LINEA 2 EN EL LCD
+	    MOVWF	PORTD
+	    CALL	COMANDO
+	    RETURN
+
+; --------------------------- SUBRUTINAS DE TIEMPO --------------------------- 
+T500MS:	    MOVLW	.6
+	    MOVWF	0X61
+	    MOVLW	.115
+	    MOVWF	0X62
+	    CALL	ST2V
+	    MOVLW	.103
+	    MOVWF	0X60
+	    CALL	ST1V
+	    NOP
+	    NOP
+	    NOP
+	    NOP
+	    NOP
+	    RETURN
+T25MS:	    MOVLW	.245
+	    MOVWF	0X61
+	    MOVLW	.14
+	    MOVWF	0X62
+	    CALL	ST2V
+	    NOP
+	    NOP
+	    NOP
+	    RETURN
+T_ESTA:	    MOVLW	.2
+	    MOVWF	0X60
+	    CALL	ST1V
+	    NOP
+	    NOP
+	    NOP
+	    NOP
+	    NOP
+	    NOP
+	    RETURN
+T2TAD:	    MOVLW	.1
+	    MOVWF	0X60
+	    CALL	ST1V
+	    RETURN
+	    END
