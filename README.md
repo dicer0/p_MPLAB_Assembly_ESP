@@ -11,4 +11,4 @@ And this specific repository contains documentation about the Assembly language,
 <br/>
 &nbsp;
 
-[![Altium Designer](http://dicer0.com/wp-content/uploads/2023/10/p_Assembler.png)](https://dicer0.com/#skills)
+[![Assembly](http://dicer0.com/wp-content/uploads/2023/10/p_Assembler.png)](https://dicer0.com/#skills)
